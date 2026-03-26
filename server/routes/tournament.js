@@ -149,13 +149,46 @@ router.post("/", requireSession, async (req, res) => {
     const user = req.session.user;
     const body = req.body || {};
 
-    const course = String(body.course || body.ground || "").trim();
+    // ✅ 1. Validate Dates
+    const start = new Date(body.startDate);
+    const end = new Date(body.endDate);
+    if (isNaN(start) || isNaN(end)) {
+      return res.status(400).json({ ok: false, message: "Invalid startDate or endDate" });
+    }
+    if (start >= end) {
+      return res.status(400).json({ ok: false, message: "Start date must be before end date" });
+    }
+
+    const oId = new mongoose.Types.ObjectId(String(user.id));
+    const tournamentVenue = String(body.course || body.ground || "").trim();
     const regClosesAt = body?.registration?.regClosesAt;
 
-    if (!body.title || !course || !body.startDate || !body.endDate || !regClosesAt) {
+    // ✅ 2. Basic Required Fields
+    if (!body.title || !tournamentVenue || !body.startDate || !body.endDate || !regClosesAt) {
       return res.status(400).json({
         ok: false,
         message: "title, course, startDate, endDate, registration.regClosesAt are required",
+      });
+    }
+
+    // ✅ 3. Duplicate Title Check
+    const dup = await Tournament.findOne({ organiserId: oId, title: String(body.title || "").trim() }).lean();
+    if (dup) {
+      return res.status(400).json({ ok: false, message: "Duplicate title not allowed" });
+    }
+
+    // ✅ 4. Check Overlapping Tournaments for same organiser at SAME COURSE
+    const overlap = await Tournament.find({
+      organiserId: oId,
+      course: tournamentVenue, 
+      $or: [
+        { startDate: { $lte: end }, endDate: { $gte: start } }
+      ]
+    }).lean();
+    if (overlap && overlap.length > 0) {
+      return res.status(400).json({ 
+        ok: false, 
+        message: `Oops! Same dates already have tournament on this course: ${overlap[0].title}` 
       });
     }
 
@@ -172,7 +205,7 @@ router.post("/", requireSession, async (req, res) => {
       status: "draft",
       visibility: body.visibility || "public",
       bannerUrl: body.bannerUrl || "",
-      course,
+      course: tournamentVenue,
       city: body.city || "",
       startDate: body.startDate,
       endDate: body.endDate,
@@ -191,7 +224,8 @@ router.post("/", requireSession, async (req, res) => {
         waitlistEnabled: !!body?.registration?.waitlistEnabled,
         handicapMin: Number(body?.registration?.handicapMin || 0),
         handicapMax: Number(body?.registration?.handicapMax || 54),
-        teamAllowed: !!body?.registration?.teamAllowed,
+        teamSize: Number(body?.registration?.teamSize) || 1,
+        teamAllowed: Number(body?.registration?.teamSize) > 1,
         extras,
         regClosesAt,
         policyText: body?.registration?.policyText || "",
@@ -259,43 +293,133 @@ router.post("/players/me/:id/register", requireSession, requirePlayer, async (re
       })
       .filter(Boolean);
 
-    const handicapAtJoin =
-      body.handicapAtJoin === null || body.handicapAtJoin === undefined ? null : Number(body.handicapAtJoin);
+    const rawHcp = body.handicapAtJoin;
+    const handicapAtJoin = (rawHcp === null || rawHcp === undefined || isNaN(Number(rawHcp))) ? null : Number(rawHcp);
     const club = String(body.club || "").trim();
+
+    // ✅ TEAM & PARTNER LOGIC
+    const partnerIds = Array.isArray(body.partnerIds) ? body.partnerIds.map(id => toObjId(id)) : [];
+    const teamSize = Number(reg.teamSize) || 1;
+
+    // ✅ Validation: partner count must not exceed teamSize - 1
+    if (partnerIds.length > teamSize - 1) {
+      return res.status(400).json({ 
+        ok: false, 
+        message: `This tournament allows a maximum of ${teamSize} players per team.` 
+      });
+    }
+
+    const teamName = String(body.teamName || "").trim();
+    if (teamSize > 1 && !teamName) {
+      return res.status(400).json({ ok: false, message: "Team name is required for team formats." });
+    }
+    
+    // Validate partners (must be players and must be friends)
+    if (partnerIds.length > 0) {
+      const Friendship = require("../models/Friendship");
+      const User = require("../models/User");
+      for (const pId of partnerIds) {
+        // Ensure they exist and are players
+        const partner = await User.findById(pId);
+        if (!partner || partner.role !== "player") {
+          return res.status(400).json({ ok: false, message: `Partner ${pId} is not a valid player.` });
+        }
+
+        // Ensure they are friends
+        const isFriend = await Friendship.findOne({
+          status: "accepted",
+          $or: [
+            { requesterId: playerId, recipientId: pId },
+            { requesterId: pId, recipientId: playerId }
+          ]
+        });
+        if (!isFriend) {
+          return res.status(400).json({ ok: false, message: `Partner ${partner.playerName || pId} is not your friend.` });
+        }
+      }
+    }
 
     const maxPlayers = Number(reg.maxPlayers || 0);
     const waitlistEnabled = !!reg.waitlistEnabled;
 
     let status = "pending";
+    const totalNewPlayers = 1 + partnerIds.length;
+
     if (maxPlayers > 0) {
       const count = await TournamentPlayer.countDocuments({
         tournamentId: toObjId(id),
         status: { $in: ["approved", "pending"] },
       });
 
-      if (count >= maxPlayers) {
+      if (count + totalNewPlayers > maxPlayers) {
         if (!waitlistEnabled) return res.status(400).json({ ok: false, message: "Tournament is full" });
         status = "waitlist";
       }
     }
 
-    const update = {
-      tournamentId: toObjId(id),
-      playerId,
-      status,
-      handicapAtJoin: Number.isFinite(handicapAtJoin) ? handicapAtJoin : null,
-      club,
-      paid: false,
-      paymentRef: "",
-      extrasChosen,
-      notes: "",
-    };
+    const registrationGroupId = crypto.randomBytes(8).toString("hex");
 
-    const registration = await TournamentPlayer.findOneAndUpdate(
-      { tournamentId: toObjId(id), playerId },
-      { $set: update, $setOnInsert: { createdAt: new Date() } },
-      { new: true, upsert: true }
-    ).lean();
+    const allPlayerIds = [playerId, ...partnerIds];
+    const registrations = [];
+
+    for (const pId of allPlayerIds) {
+      const otherPartnerIds = allPlayerIds.filter(id => String(id) !== String(pId));
+      
+      const update = {
+        tournamentId: toObjId(id),
+        playerId: pId,
+        status,
+        handicapAtJoin: String(pId) === String(playerId) ? (Number.isFinite(handicapAtJoin) ? handicapAtJoin : null) : null,
+        club: String(pId) === String(playerId) ? club : "",
+        paid: false,
+        paymentRef: "",
+        extrasChosen: String(pId) === String(playerId) ? extrasChosen : [],
+        notes: String(pId) === String(playerId) ? (body.notes || "") : "",
+        teamName,
+        partnerIds: otherPartnerIds,
+        registrationGroupId,
+      };
+
+      const reg = await TournamentPlayer.findOneAndUpdate(
+        { tournamentId: toObjId(id), playerId: pId },
+        { $set: update, $setOnInsert: { createdAt: new Date() } },
+        { upsert: true, new: true }
+      );
+      registrations.push(reg);
+    }
+
+    const registration = registrations.find(r => String(r.playerId) === String(playerId));
+
+    // ✅ Optional: Also create placeholder registrations for partners if needed, 
+    // or just rely on them registering themselves and picking you.
+    // User said "mai sirf un dosto ko hi apne sath game me add kr sakta hu"
+    // Usually this means the leader registers the whole team.
+    
+    if (partnerIds.length > 0) {
+      const User = require("../models/User");
+      for (const pId of partnerIds) {
+        // Fetch partner handicap/club from their user profile
+        const pUser = await User.findById(pId).select("handicap club").lean();
+
+        await TournamentPlayer.findOneAndUpdate(
+          { tournamentId: toObjId(id), playerId: pId },
+          { 
+            $set: { 
+              tournamentId: toObjId(id), 
+              playerId: pId, 
+              status, 
+              teamName, 
+              partnerIds: [userId, ...partnerIds.filter(id => String(id) !== String(pId))],
+              registrationGroupId,
+              handicapAtJoin: pUser?.handicap ?? null,
+              club: pUser?.club || "",
+            },
+            $setOnInsert: { createdAt: new Date() }
+          },
+          { upsert: true }
+        );
+      }
+    }
 
     return res.json({ ok: true, registration });
   } catch (err) {
@@ -337,40 +461,95 @@ router.get("/me/:id/registrations", requireSession, requireOrganiser, async (req
     const tournament = await Tournament.findOne({ _id: toObjId(id), organiserId }).lean();
     if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found / not yours" });
 
+    const rawRegs = await TournamentPlayer.find({ tournamentId: toObjId(id) }).lean();
+    console.log(`[DEBUG] RAW COLLECTION COUNT: ${rawRegs.length}`);
+    for (const r of rawRegs) {
+      console.log(`[DEBUG] RegId: ${r._id} | PlayerId: ${r.playerId} | Group: ${r.registrationGroupId}`);
+    }
+
+    // ✅ Filter out players who are BLOCKED in their User account
     const regs = await TournamentPlayer.find({ tournamentId: toObjId(id) })
-      .populate("playerId", "playerName email phone city handicap")
-      .sort({ createdAt: -1 })
+      .populate("playerId", "playerName email phone city handicap status")
+      .populate("partnerIds", "playerName email handicap status")
+      .sort({ createdAt: 1 })
       .lean();
 
-    const items = regs.map((r) => ({
-      _id: r._id,
-      tournamentId: r.tournamentId,
-      status: r.status,
-      paid: r.paid,
-      paymentRef: r.paymentRef,
-      handicapAtJoin: r.handicapAtJoin,
-      club: r.club,
-      extrasChosen: r.extrasChosen || [],
-      notes: r.notes || "",
-      createdAt: r.createdAt,
-      updatedAt: r.updatedAt,
+    // Identify groups that have at least one blocked member
+    const blockedGIDs = new Set();
+    for (const r of regs) {
+      const isUserBlocked = r.playerId?.status === "blocked";
+      const isRegBlocked = r.status === "blocked";
+      if (isUserBlocked || isRegBlocked) {
+        if (r.registrationGroupId) blockedGIDs.add(r.registrationGroupId);
+      }
+    }
 
-      // ✅ entry-pass + checkin
-      entryCode: r.entryCode || "",
-      entryIssuedAt: r.entryIssuedAt || null,
-      checkInAt: r.checkInAt || null,
+    // Map all members of blocked groups to "blocked" status
+    const items = regs.map(r => {
+      let currentStatus = r.status;
+      if (r.registrationGroupId && blockedGIDs.has(r.registrationGroupId)) {
+        currentStatus = "blocked";
+      }
+      
+      const item = {
+        _id: r._id,
+        tournamentId: r.tournamentId,
+        status: currentStatus,
+        paid: r.paid,
+        paymentRef: r.paymentRef,
+        handicapAtJoin: r.handicapAtJoin,
+        club: r.club,
+        extrasChosen: r.extrasChosen || [],
+        notes: r.notes || "",
+        createdAt: r.createdAt,
+        updatedAt: r.updatedAt,
 
-      player: {
-        _id: r.playerId?._id,
-        name: r.playerId?.playerName || "—",
-        email: r.playerId?.email || "—",
-        phone: r.playerId?.phone || "—",
-        city: r.playerId?.city || "—",
-        handicap: r.playerId?.handicap ?? "—",
-      },
-    }));
+        // ✅ entry-pass + checkin
+        entryCode: r.entryCode || "",
+        entryIssuedAt: r.entryIssuedAt || null,
+        checkInAt: r.checkInAt || null,
 
-    return res.json({ ok: true, tournament, items });
+        player: {
+          _id: r.playerId?._id,
+          name: r.playerId?.playerName || "—",
+          email: r.playerId?.email || "—",
+          phone: r.playerId?.phone || "—",
+          city: r.playerId?.city || "—",
+          handicap: r.playerId?.handicap ?? "—",
+        },
+        registrationGroupId: r.registrationGroupId || "",
+        teamName: r.teamName || "",
+        partnerIds: r.partnerIds || [],
+        partners: (r.partnerIds || []).map(p => ({
+          _id: p?._id,
+          name: p?.playerName || "—",
+          email: p?.email || "—",
+          handicap: p?.handicap ?? "—"
+        })),
+        isLeader: false // Default
+      };
+
+      const gid = item.registrationGroupId || `solo-${item._id}`;
+      if (!grouped[gid]) {
+        grouped[gid] = { 
+          groupId: gid, 
+          teamName: item.teamName || "Solo / Unnamed Team", 
+          status: item.status, 
+          members: [] 
+        };
+        item.isLeader = true; // First one added to group is leader
+      }
+      grouped[gid].members.push(item);
+      console.log(`[DEBUG] Adding ${item.player?.name} to group ${gid}. Size: ${grouped[gid].members.length}`);
+      return item;
+    });
+
+    return res.json({ 
+      ok: true, 
+      tournament, 
+      items, 
+      grouped: Object.values(grouped) 
+    });
   } catch (err) {
     console.error("GET ORGANISER REGISTRATIONS ERROR:", err);
     return res.status(500).json({ ok: false, message: err.message || "Server error" });
@@ -397,33 +576,42 @@ router.patch("/me/:tid/registrations/:rid/status", requireSession, requireOrgani
     if (!allowed.includes(next)) return res.status(400).json({ ok: false, message: "Invalid status" });
 
     if (next === "removed") {
-      const deleted = await TournamentPlayer.findOneAndDelete({ _id: toObjId(rid), tournamentId: toObjId(tid) });
-      if (!deleted) return res.status(404).json({ ok: false, message: "Registration not found" });
-      return res.json({ ok: true, message: "Registration removed" });
+      const target = await TournamentPlayer.findOne({ _id: toObjId(rid), tournamentId: toObjId(tid) }).lean();
+      if (!target) return res.status(404).json({ ok: false, message: "Registration not found" });
+
+      const groupId = target.registrationGroupId;
+      const query = groupId 
+        ? { tournamentId: toObjId(tid), registrationGroupId: groupId } 
+        : { _id: toObjId(rid), tournamentId: toObjId(tid) };
+
+      await TournamentPlayer.deleteMany(query);
+      return res.json({ ok: true, message: "Registration(s) removed" });
     }
 
-    // ✅ update status
-    const updated = await TournamentPlayer.findOneAndUpdate(
-      { _id: toObjId(rid), tournamentId: toObjId(tid) },
-      { $set: { status: next } },
-      { new: true }
-    )
-      .populate("playerId", "playerName email phone city handicap")
-      .lean();
+    // ✅ update status for the WHOLE TEAM
+    const target = await TournamentPlayer.findOne({ _id: toObjId(rid), tournamentId: toObjId(tid) }).lean();
+    if (!target) return res.status(404).json({ ok: false, message: "Registration not found" });
 
-    if (!updated) return res.status(404).json({ ok: false, message: "Registration not found" });
+    const groupId = target.registrationGroupId;
+    const query = groupId 
+      ? { tournamentId: toObjId(tid), registrationGroupId: groupId } 
+      : { _id: toObjId(rid), tournamentId: toObjId(tid) };
+
+    const result = await TournamentPlayer.updateMany(query, { $set: { status: next } });
 
     // ✅ AUTO ISSUE ENTRY CODE when approved
     if (next === "approved") {
-      await issueEntryForApproved(tid, rid);
+      const regsToIssue = await TournamentPlayer.find(query);
+      for (const r of regsToIssue) {
+        await issueEntryForApproved(tid, r._id);
+      }
     }
 
-    // return latest record (so UI can show entryCode instantly if you want)
-    const latest = await TournamentPlayer.findOne({ _id: toObjId(rid), tournamentId: toObjId(tid) })
-      .populate("playerId", "plyerName email phone city handicap")
+    const updated = await TournamentPlayer.findOne({ _id: toObjId(rid), tournamentId: toObjId(tid) })
+      .populate("playerId", "playerName email phone city handicap")
       .lean();
 
-    return res.json({ ok: true, registration: latest || updated });
+    return res.json({ ok: true, registration: updated, modifiedCount: result.modifiedCount });
   } catch (err) {
     console.error("UPDATE REG STATUS ERROR:", err);
     return res.status(500).json({ ok: false, message: err.message || "Server error" });
@@ -447,14 +635,17 @@ router.patch("/me/:tid/registrations/:rid/paid", requireSession, requireOrganise
     const paid = !!req.body?.paid;
     const paymentRef = String(req.body?.paymentRef || "");
 
-    const updated = await TournamentPlayer.findOneAndUpdate(
-      { _id: toObjId(rid), tournamentId: toObjId(tid) },
-      { $set: { paid, paymentRef } },
-      { new: true }
-    ).lean();
+    const target = await TournamentPlayer.findOne({ _id: toObjId(rid), tournamentId: toObjId(tid) }).lean();
+    if (!target) return res.status(404).json({ ok: false, message: "Registration not found" });
 
-    if (!updated) return res.status(404).json({ ok: false, message: "Registration not found" });
+    const groupId = target.registrationGroupId;
+    const query = groupId 
+      ? { tournamentId: toObjId(tid), registrationGroupId: groupId } 
+      : { _id: toObjId(rid), tournamentId: toObjId(tid) };
 
+    await TournamentPlayer.updateMany(query, { $set: { paid, paymentRef } });
+
+    const updated = await TournamentPlayer.findOne({ _id: toObjId(rid), tournamentId: toObjId(tid) }).lean();
     return res.json({ ok: true, registration: updated });
   } catch (err) {
     console.error("UPDATE PAID ERROR:", err);
@@ -477,40 +668,104 @@ router.delete("/me/:tid/registrations/:rid", requireSession, requireOrganiser, a
     const tournament = await Tournament.findOne({ _id: toObjId(tid), organiserId }).lean();
     if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found / not yours" });
 
-    const deleted = await TournamentPlayer.findOneAndDelete({ _id: toObjId(rid), tournamentId: toObjId(tid) });
-    if (!deleted) return res.status(404).json({ ok: false, message: "Registration not found" });
+    const target = await TournamentPlayer.findOne({ _id: toObjId(rid), tournamentId: toObjId(tid) }).lean();
+    if (!target) return res.status(404).json({ ok: false, message: "Registration not found" });
 
-    return res.json({ ok: true, message: "Registration removed" });
+    const groupId = target.registrationGroupId;
+    const query = groupId 
+      ? { tournamentId: toObjId(tid), registrationGroupId: groupId } 
+      : { _id: toObjId(rid), tournamentId: toObjId(tid) };
+
+    const deleted = await TournamentPlayer.deleteMany(query);
+    if (deleted.deletedCount === 0) return res.status(404).json({ ok: false, message: "Registration not found" });
+
+    return res.json({ ok: true, message: "Registration(s) removed", deletedCount: deleted.deletedCount });
   } catch (err) {
     console.error("DELETE REGISTRATION ERROR:", err);
     return res.status(500).json({ ok: false, message: err.message || "Server error" });
   }
 });
-router.patch("/me/:tid/registrations/:rid/paid", requireSession, requireOrganiser, async (req, res) => {
+
+// ✅ Remove duplicate PATCH /paid (lines 602-628 were redundant)
+
+// ------------------------------------------------------------------
+// ✅ MANUAL REGISTER (Organiser)
+// POST /api/tournaments/me/:tid/registrations/manual
+// ------------------------------------------------------------------
+router.post("/me/:tid/registrations/manual", requireSession, requireOrganiser, async (req, res) => {
   try {
-    const { tid, rid } = req.params;
-    if (!isObjectId(tid)) return res.status(400).json({ ok: false, message: "Invalid tournament id" });
-    if (!isObjectId(rid)) return res.status(400).json({ ok: false, message: "Invalid registration id" });
+    const { tid } = req.params;
+    if (!isObjectId(tid)) return res.status(400).json({ ok: false, message: "Invalid id" });
 
     const organiserId = toObjId(req.session.user.id);
-    const tournament = await Tournament.findOne({ _id: toObjId(tid), organiserId }).lean();
-    if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found / not yours" });
+    const tournament = await Tournament.findOne({ _id: toObjId(tid), organiserId });
+    if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found" });
 
-    const paid = !!req.body?.paid;
-    const paymentRef = String(req.body?.paymentRef || "");
+    const { name, phone, email, handicap, club, notes, paid, teamName, partners } = req.body;
+    if (!name || !phone) return res.status(400).json({ ok: false, message: "Main player Name and Phone are required" });
 
-    const updated = await TournamentPlayer.findOneAndUpdate(
-      { _id: toObjId(rid), tournamentId: toObjId(tid) },
-      { $set: { paid, paymentRef } },
-      { new: true }
-    ).lean();
+    const User = require("../models/User");
+    const bcrypt = require("bcrypt");
 
-    if (!updated) return res.status(404).json({ ok: false, message: "Registration not found" });
+    // Helper to find or create a player
+    const getPlayer = async (pName, pPhone, pEmail, pHandicap) => {
+      let p = await User.findOne({ $or: [{ phone: pPhone }, { email: pEmail || "non-existent-email" }] });
+      if (!p) {
+        const hashed = await bcrypt.hash("123456", 10);
+        p = await User.create({
+          playerName: pName,
+          phone: pPhone,
+          email: pEmail || `${pPhone}@golf.internal`,
+          passwordHash: hashed, // Fixed field name
+          role: "player",
+          status: "active"
+        });
+      }
+      return p;
+    };
 
-    return res.json({ ok: true, registration: updated });
+    // 1. Process Main Player
+    const mainPlayer = await getPlayer(name, phone, email, handicap);
+    
+    // 2. Process Partners
+    const partnerIds = [];
+    const incomingPartners = Array.isArray(partners) ? partners : [];
+    for (const p of incomingPartners) {
+      if (!p.name || !p.phone) continue;
+      const partnerUser = await getPlayer(p.name, p.phone, p.email, p.handicap);
+      partnerIds.push(partnerUser._id);
+    }
+
+    const allPlayerIds = [mainPlayer._id, ...partnerIds];
+    const registrations = [];
+    const registrationGroupId = crypto.randomBytes(8).toString("hex");
+
+    // 3. Create Registrations for All
+    for (const pId of allPlayerIds) {
+      const otherPartnerIds = allPlayerIds.filter(id => String(id) !== String(pId));
+      const reg = await TournamentPlayer.findOneAndUpdate(
+        { tournamentId: toObjId(tid), playerId: pId },
+        {
+          $set: {
+            status: "approved",
+            paid: !!paid,
+            handicapAtJoin: (handicap && !isNaN(Number(handicap))) ? Number(handicap) : null,
+            club: club || "",
+            notes: notes || "Added manually by organiser",
+            teamName: teamName || "",
+            partnerIds: otherPartnerIds,
+            registrationGroupId,
+          },
+          $setOnInsert: { createdAt: new Date() }
+        },
+        { new: true, upsert: true }
+      );
+      registrations.push(reg);
+    }
+
+    return res.json({ ok: true, registrations, registrationGroupId });
   } catch (err) {
-    console.error("UPDATE PAID ERROR:", err);
-    return res.status(500).json({ ok: false, message: err.message || "Server error" });
+    return res.status(500).json({ ok: false, message: err.message });
   }
 });
 
@@ -669,7 +924,45 @@ router.patch("/me/:id", requireSession, requireOrganiser, async (req, res) => {
     if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found" });
 
     const body = req.body || {};
-    const updatableFields = ["title", "description", "status", "visibility", "bannerUrl", "course", "city", "startDate", "endDate", "teeOffWindow", "format", "rounds", "regClosesAt"];
+    const oId = organiserId;
+
+    // ✅ Validate Dates in Update
+    const start = body.startDate ? new Date(body.startDate) : new Date(tournament.startDate);
+    const end = body.endDate ? new Date(body.endDate) : new Date(tournament.endDate);
+    
+    if (isNaN(start) || isNaN(end)) {
+      return res.status(400).json({ ok: false, message: "Invalid startDate or endDate" });
+    }
+    if (start >= end) {
+      return res.status(400).json({ ok: false, message: "Start date must be before end date" });
+    }
+
+    // ✅ Duplicate Title Check (excluding this tournament)
+    if (body.title && String(body.title).trim().toLowerCase() !== String(tournament.title).toLowerCase()) {
+      const dup = await Tournament.findOne({ 
+        _id: { $ne: toObjId(id) }, 
+        organiserId: oId, 
+        title: { $regex: new RegExp(`^${body.title.trim()}$`, "i") } 
+      }).lean();
+      if (dup) return res.status(400).json({ ok: false, message: "A tournament with this name already exists." });
+    }
+
+    const checkCourse = body.course ? String(body.course).trim() : tournament.course;
+    
+    // ✅ Check Overlapping Tournaments (excluding this tournament)
+    const overlap = await Tournament.findOne({
+      _id: { $ne: toObjId(id) },
+      organiserId: oId,
+      course: checkCourse,
+      $or: [
+        { startDate: { $lte: end }, endDate: { $gte: start } }
+      ]
+    }).lean();
+    if (overlap) {
+      return res.status(400).json({ ok: false, message: `Overlap detected with: ${overlap.title}` });
+    }
+
+    const updatableFields = ["title", "description", "status", "visibility", "bannerUrl", "course", "city", "startDate", "endDate", "teeOffWindow", "format", "rounds"];
     
     for (const field of updatableFields) {
       if (body[field] !== undefined) {
@@ -679,11 +972,15 @@ router.patch("/me/:id", requireSession, requireOrganiser, async (req, res) => {
 
     if (body.registration) {
       if (!tournament.registration) tournament.registration = {};
-      const regFields = ["fee", "currency", "maxPlayers", "waitlistEnabled", "handicapMin", "handicapMax", "teamAllowed", "regClosesAt", "policyText"];
+      const regFields = ["fee", "currency", "maxPlayers", "waitlistEnabled", "handicapMin", "handicapMax", "teamAllowed", "teamSize", "regClosesAt", "policyText"];
       for (const field of regFields) {
         if (body.registration[field] !== undefined) {
           tournament.registration[field] = body.registration[field];
         }
+      }
+      // Ensure teamAllowed is synced with teamSize
+      if (body.registration.teamSize !== undefined) {
+        tournament.registration.teamAllowed = Number(body.registration.teamSize) > 1;
       }
     }
 
@@ -701,10 +998,24 @@ router.patch("/me/:id", requireSession, requireOrganiser, async (req, res) => {
 // ------------------------------------------------------------------
 router.delete("/me/:id", requireSession, requireOrganiser, async (req, res) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id;
     if (!isObjectId(id)) return res.status(400).json({ ok: false, message: "Invalid id" });
     const organiserId = toObjId(req.session.user.id);
-    
+
+    const Match = require("../models/Match");
+
+    // ✅ CHECK FOR PLAYERS
+    const playersCount = await TournamentPlayer.countDocuments({ tournamentId: toObjId(id) });
+    if (playersCount > 0) {
+      return res.status(400).json({ ok: false, message: `Cannot delete: ${playersCount} players have already registered for this tournament.` });
+    }
+
+    // ✅ CHECK FOR MATCHES
+    const matchesCount = await Match.countDocuments({ tournamentId: toObjId(id) });
+    if (matchesCount > 0) {
+      return res.status(400).json({ ok: false, message: `Cannot delete: ${matchesCount} matches are already scheduled for this tournament.` });
+    }
+
     const deleted = await Tournament.findOneAndDelete({ _id: toObjId(id), organiserId });
     if (!deleted) return res.status(404).json({ ok: false, message: "Tournament not found or unauth" });
 

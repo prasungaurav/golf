@@ -30,6 +30,11 @@ const TournamentPlayerSchema = new mongoose.Schema(
 
     notes: { type: String, default: "" },
 
+    // ✅ Team Registration
+    teamName: { type: String, default: "" },
+    partnerIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "User", index: true }], // References other players in the same team
+    registrationGroupId: { type: String, default: "", index: true }, // Links players registered in the same session
+
     // ✅ Entry pass (QR)
     entryCode: { type: String, default: "", index: true },
     entrySecret: { type: String, default: "" },

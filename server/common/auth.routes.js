@@ -140,6 +140,10 @@ router.post("/login-email", async (req, res) => {
     const ok = await bcrypt.compare(String(password), user.passwordHash || "");
     if (!ok) return res.status(401).json({ ok: false, message: "Invalid credentials" });
 
+    if (user.status === "blocked") {
+      return res.status(403).json({ ok: false, message: "Your account is blocked. Please contact admin." });
+    }
+
     req.session.user = {
       id: user._id.toString(),
       role: user.role,
@@ -163,6 +167,13 @@ router.post("/otp-send", otpLimiter, async (req, res) => {
     if (!validPhone(phone)) return res.status(400).json({ ok: false, message: "Valid phone required" });
 
     const p = cleanPhone(phone);
+
+    // ✅ CHECK: Does user exist? (Login flow only)
+    const user = await User.findOne({ phone: p });
+    if (!user) {
+      return res.status(404).json({ ok: false, message: "User does not exist with this phone number. Please register." });
+    }
+
     const otp = makeOtp();
     const codeHash = await bcrypt.hash(otp, 10);
 
@@ -207,6 +218,10 @@ router.post("/otp-verify", async (req, res) => {
     // find user by phone
     const user = await User.findOne({ phone: p });
     if (!user) return res.status(404).json({ ok: false, message: "No user found for this phone. Please register." });
+
+    if (user.status === "blocked") {
+      return res.status(403).json({ ok: false, message: "Your account is blocked. Please contact admin." });
+    }
 
     // set session
     req.session.user = {

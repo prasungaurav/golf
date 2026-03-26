@@ -113,7 +113,7 @@ router.post("/bids", async (req, res) => {
     }
 
     const amt = Number(amount);
-    if (!amt || Number.isNaN(amt)) return res.status(400).json({ message: "Invalid amount" });
+    if (!amt || Number.isNaN(amt) || amt <= 0) return res.status(400).json({ message: "Amount must be greater than 0" });
     if (amt < minBid) return res.status(400).json({ message: `Minimum bid is ₹${minBid}` });
 
     const sponsorId =
@@ -130,7 +130,7 @@ if (!sponsorId) {
     const bid = await SponsorBid.create({
       tournamentId: t._id,
       organiserId: t.organiserId,
-      sponsorId,
+      sponsorId: toObjId(sponsorId),
       slotType,
       amount: amt,
       brandCategory: brandCategory || "",

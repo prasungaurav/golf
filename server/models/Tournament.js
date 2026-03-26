@@ -17,6 +17,7 @@ const RegistrationSchema = new mongoose.Schema(
     handicapMin: { type: Number, default: 0, min: 0 },
     handicapMax: { type: Number, default: 54, min: 0 },
     teamAllowed: { type: Boolean, default: false },
+    teamSize: { type: Number, default: 1, min: 1, max: 4 },
     extras: { type: [ExtraSchema], default: [] },
     regClosesAt: { type: Date, required: true },
     policyText: { type: String, default: "" }, // optional

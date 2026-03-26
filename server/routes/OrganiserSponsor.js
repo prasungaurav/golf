@@ -83,22 +83,24 @@ router.patch("/sponsor-bids/:bidId", async (req, res) => {
     }
 
     if (action === "approve") {
-      // 1) approve this bid
+      // 1) accept this bid
       await SponsorBid.updateOne(
         { _id: bidId },
-        { $set: { status: "approved", decidedAt: new Date(), rejectionReason: "" } }
+        { $set: { status: "accepted", decidedAt: new Date(), rejectionReason: "" } }
       );
 
-      // 2) only 1 approved per tournamentId + slotType
+      // 2) mark others in this slot as 'lost'
       await SponsorBid.updateMany(
         {
           tournamentId: bid.tournamentId,
           slotType: bid.slotType,
           _id: { $ne: bidId },
-          status: { $ne: "rejected" }, // keep rejected as rejected
+          status: { $in: ["pending", "accepted"] }, 
         },
-        { $set: { status: "pending", decidedAt: null } }
+        { $set: { status: "lost", decidedAt: new Date() } }
       );
+
+      await syncTournamentSponsors(bid.tournamentId);
 
       return res.json({ ok: true });
     }
@@ -115,14 +117,14 @@ router.patch("/sponsor-bids/:bidId", async (req, res) => {
       }
     );
 
-    // if there is already an approved one in this slot -> do nothing
-    const approved = await SponsorBid.findOne({
+    // if there is already an accepted one in this slot -> do nothing
+    const accepted = await SponsorBid.findOne({
       tournamentId: bid.tournamentId,
       slotType: bid.slotType,
-      status: "approved",
+      status: "accepted",
     }).lean();
 
-    if (approved) return res.json({ ok: true, autoApprovedId: null });
+    if (accepted) return res.json({ ok: true, autoApprovedId: null });
 
     // auto pick next best pending: highest amount, tie -> earliest
     const next = await SponsorBid.findOne({
@@ -136,9 +138,12 @@ router.patch("/sponsor-bids/:bidId", async (req, res) => {
     if (next) {
       await SponsorBid.updateOne(
         { _id: next._id },
-        { $set: { status: "approved", decidedAt: new Date(), rejectionReason: "" } }
+        { $set: { status: "accepted", decidedAt: new Date(), rejectionReason: "" } }
       );
+      await syncTournamentSponsors(bid.tournamentId);
     }
+
+    return res.json({ ok: true, autoApprovedId: next?._id || null });
 
     return res.json({ ok: true, autoApprovedId: next?._id || null });
   } catch (err) {
@@ -146,5 +151,21 @@ router.patch("/sponsor-bids/:bidId", async (req, res) => {
     return res.status(500).json({ message: "Server Error" });
   }
 });
+
+async function syncTournamentSponsors(tid) {
+  // Find all accepted bids for this tournament
+  const acceptedBids = await SponsorBid.find({ tournamentId: tid, status: "accepted" })
+    .populate("sponsorId", "companyName companyWebsite logoUrl")
+    .lean();
+
+  const sponsors = acceptedBids.map(b => ({
+    name: b.brandCategory || b.sponsorId?.companyName || "Sponsor",
+    tier: b.slotType === "title" ? "Title" : b.slotType === "gold" ? "Gold" : "Silver",
+    url: b.sponsorId?.companyWebsite || "",
+    logoUrl: b.logoUrl || b.sponsorId?.logoUrl || ""
+  }));
+
+  await Tournament.findByIdAndUpdate(tid, { $set: { sponsors } });
+}
 
 module.exports = router;

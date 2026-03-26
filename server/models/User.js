@@ -23,6 +23,9 @@ const UserSchema = new mongoose.Schema(
     organiserName: String,
     organiserType: { type: String, enum: ["golf club", "charity", "corporate"] },
     organiserAddress: String,
+    
+    // ✅ status
+    status: { type: String, enum: ["active", "blocked"], default: "active", index: true },
   },
   { timestamps: true }
 );

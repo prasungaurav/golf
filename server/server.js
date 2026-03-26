@@ -59,6 +59,7 @@ const adminRoutes = require("./routes/admin");
 
 app.use("/api/admin", adminRoutes);
 app.use("/api/matches", require("./routes/match"));
+app.use("/api/friends", require("./routes/friends"));
 
 
 connectDB(process.env.MONGO_URI).then(() => {

@@ -33,8 +33,8 @@ router.get("/tournament/:tid", async (req, res) => {
     if (!isObjectId(tid)) return res.status(400).json({ ok: false, message: "Invalid tournament id" });
 
     const list = await Match.find({ tournamentId: toObjId(tid) })
-      .populate("playerA", "playerName")
-      .populate("playerB", "playerName")
+      .populate("teamA", "playerName")
+      .populate("teamB", "playerName")
       .sort({ startTime: 1 })
       .lean();
 
@@ -42,13 +42,16 @@ router.get("/tournament/:tid", async (req, res) => {
     const matches = list.map((m) => ({
       _id: m._id,
       name: m.name,
-      status: (m.status || "").toLowerCase(), // "live" etc.
+      status: (m.status || "").toLowerCase(),
       hole: m.hole ?? 0,
       scoreA: m.scoreA ?? null,
       scoreB: m.scoreB ?? null,
       group: m.group || "",
-      playerA: { name: m.playerA?.playerName || "Player A" },
-      playerB: { name: m.playerB?.playerName || "Player B" },
+      teamA: (m.teamA || []).map(p => ({ _id: p?._id, name: p?.playerName || "—" })),
+      teamB: (m.teamB || []).map(p => ({ _id: p?._id, name: p?.playerName || "—" })),
+      teamAName: m.teamAName || "",
+      teamBName: m.teamBName || "",
+      startTime: m.startTime,
     }));
 
     return res.json({ ok: true, matches });
@@ -82,9 +85,13 @@ router.patch("/:id", requireSession, requireOrganiser, async (req, res) => {
       update.status = st;
     }
 
+    if (body.holeScores !== undefined && Array.isArray(body.holeScores)) {
+      update.holeScores = body.holeScores;
+    }
+
     const match = await Match.findByIdAndUpdate(toObjId(id), { $set: update }, { new: true })
-      .populate("playerA", "playerName")
-      .populate("playerB", "playerName")
+      .populate("teamA", "playerName")
+      .populate("teamB", "playerName")
       .lean();
 
     if (!match) return res.status(404).json({ ok: false, message: "Match not found" });
@@ -99,8 +106,10 @@ router.patch("/:id", requireSession, requireOrganiser, async (req, res) => {
         scoreA: match.scoreA ?? null,
         scoreB: match.scoreB ?? null,
         group: match.group || "",
-        playerA: { name: match.playerA?.playerName || "Player A" },
-        playerB: { name: match.playerB?.playerName || "Player B" },
+        teamA: (match.teamA || []).map(p => ({ _id: p?._id, name: p?.playerName || "—" })),
+        teamB: (match.teamB || []).map(p => ({ _id: p?._id, name: p?.playerName || "—" })),
+        teamAName: match.teamAName || "",
+        teamBName: match.teamBName || "",
       },
     });
   } catch (err) {
@@ -121,36 +130,77 @@ router.post("/tournament/me/:tid/schedule", requireSession, requireOrganiser, as
     if (!isObjectId(tid)) return res.status(400).json({ ok: false, message: "Invalid tournament id" });
     if (!slots || !Array.isArray(slots)) return res.status(400).json({ ok: false, message: "No slots provided" });
 
-    // 1. Agar replaceExisting true hai, toh purane matches delete karein
+    // ✅ VALIDATE TOURNAMENT & OWNER
+    const organiserId = toObjId(req.session.user.id);
+    const tournament = await Tournament.findOne({ _id: toObjId(tid), organiserId });
+    if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found or you don't own it" });
+
+    const matchDate = new Date(date);
+    const tStart = new Date(tournament.startDate);
+    const tEnd = new Date(tournament.endDate);
+
+    if (matchDate < tStart || matchDate > tEnd) {
+      return res.status(400).json({ 
+        ok: false, 
+        message: `Date ${date} is outside tournament range (${tStart.toLocaleDateString()} to ${tEnd.toLocaleDateString()})` 
+      });
+    }
+
     if (replaceExisting) {
       await Match.deleteMany({ tournamentId: toObjId(tid) });
     }
 
     const matchesToCreate = [];
+    const playerTimeMap = new Set(); 
 
-    // 2. Slots se Matches banana (Pairing Logic)
-    slots.forEach((slot) => {
-      const { time, tee, group } = slot;
-      if (!group || group.length === 0) return;
+    const TournamentPlayer = require("../models/TournamentPlayer");
+    const approvedRegs = await TournamentPlayer.find({ 
+      tournamentId: toObjId(tid), 
+      status: "approved" 
+    }).select("playerId").lean();
+    const approvedPlayerIds = new Set(approvedRegs.map(r => String(r.playerId)));
 
-      // Har 2 players ke liye ek match banega
-      for (let i = 0; i < group.length; i += 2) {
-        const pA = group[i];
-        const pB = group[i + 1] || null; // Agar akela player hai toh pB null
+    for (const slot of slots) {
+      const { time, tee, teams } = slot;
+      if (!teams || teams.length === 0) continue;
+
+      const startTimeRaw = `${date}T${time}:00`;
+      const startTime = new Date(startTimeRaw);
+      if (isNaN(startTime)) return res.status(400).json({ ok: false, message: `Invalid time: ${time}` });
+
+      for (let i = 0; i < teams.length; i += 2) {
+        const teamA = teams[i];
+        const teamB = teams[i + 1] || null;
+
+        const allPlayerIdsInMatch = [...teamA.playerIds, ...(teamB ? teamB.playerIds : [])];
+
+        for (const pId of allPlayerIdsInMatch) {
+          if (!approvedPlayerIds.has(String(pId))) {
+            return res.status(400).json({ ok: false, message: `Player ${pId} is not approved or part of a valid team.` });
+          }
+
+          const key = `${pId}_${startTimeRaw}`;
+          if (playerTimeMap.has(key)) {
+            return res.status(400).json({ ok: false, message: `Conflict: Player ${pId} is scheduled multiple times at ${time}.` });
+          }
+          playerTimeMap.add(key);
+        }
 
         matchesToCreate.push({
           tournamentId: toObjId(tid),
           name: `Match ${time} - ${tee}`,
-          group: tee, // Tee 1 ya Tee 10
-          playerA: pA ? toObjId(pA) : null,
-          playerB: pB ? toObjId(pB) : null,
-          startTime: new Date(`${date}T${time}:00`),
+          group: tee, 
+          teamA: teamA.playerIds.map(id => toObjId(id)),
+          teamB: teamB ? teamB.playerIds.map(id => toObjId(id)) : [],
+          teamAName: teamA.name || "Team A",
+          teamBName: teamB ? (teamB.name || "Team B") : "",
+          startTime,
           status: "scheduled",
           hole: 1,
           ground: tee
         });
       }
-    });
+    }
 
     if (matchesToCreate.length > 0) {
       await Match.insertMany(matchesToCreate);
@@ -167,13 +217,13 @@ router.post("/tournament/me/:tid/schedule", requireSession, requireOrganiser, as
     return res.status(500).json({ ok: false, message: err.message || "Server error" });
   }
 });
+
 // ✅ GET ALL MATCHES
-// /api/matches/all
 router.get("/all", async (req, res) => {
   try {
     const list = await Match.find({})
-      .populate("playerA", "playerName")
-      .populate("playerB", "playerName")
+      .populate("teamA", "playerName")
+      .populate("teamB", "playerName")
       .sort({ startTime: 1 })
       .lean();
 
@@ -185,8 +235,10 @@ router.get("/all", async (req, res) => {
       scoreA: m.scoreA ?? null,
       scoreB: m.scoreB ?? null,
       group: m.group || "",
-      playerA: { name: m.playerA?.playerName || "Player A" },
-      playerB: { name: m.playerB?.playerName || "Player B" },
+      teamA: (m.teamA || []).map(p => ({ _id: p?._id, name: p?.playerName || "—" })),
+      teamB: (m.teamB || []).map(p => ({ _id: p?._id, name: p?.playerName || "—" })),
+      teamAName: m.teamAName || "",
+      teamBName: m.teamBName || "",
     }));
 
     return res.json({ ok: true, matches });
