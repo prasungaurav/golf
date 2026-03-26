@@ -1,0 +1,79 @@
+/* Thin Ads */
+.thinAd {
+  width: 100%;
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface_container_low);
+  color: var(--on_surface);
+  gap: 12px;
+  border-radius: var(--radius-lg);
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.bottomAd {
+  margin-top: 2px;
+}
+
+.sponsorText {
+  color: var(--primary);
+  font-weight: 700;
+  animation: sponsorPulse 1.2s infinite alternate ease-in-out;
+}
+
+@keyframes sponsorPulse {
+  0% {
+    font-size: 1.3rem;
+    /* large ≈ 1rem */
+    text-shadow: none;
+    opacity: 0.85;
+  }
+
+  100% {
+    font-size: 1.6rem;
+    /* x-large ≈ 1.3rem */
+    text-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    opacity: 1;
+  }
+}
+
+.topAd {
+  position: sticky;
+  top: 0;
+  z-index: 1200;
+  border-radius: 0;
+  margin-bottom: 0;
+  background: var(--surface_container_highest);
+  color: var(--on_surface);
+  border-bottom: 1px solid var(--outline_variant);
+}
+
+.adBtn {
+  padding: 8px 16px;
+  border-radius: var(--radius-xl);
+  border: none;
+  background: var(--signature-gradient);
+  color: var(--on_primary_container);
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.adBtn:hover {
+  transform: translateY(-2px);
+}
+
+@media (max-width: 600px) {
+  .thinAd {
+    flex-direction: column;
+    text-align: center;
+    padding: 12px;
+  }
+
+  .adBtn {
+    width: 100%;
+  }
+}

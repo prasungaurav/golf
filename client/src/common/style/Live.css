@@ -1,0 +1,449 @@
+/* Midnight Cyber Performance - Live.css */
+
+.livePage {
+  margin: 18px auto 30px;
+  padding: 0 16px;
+}
+
+/* Header */
+.liveHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.liveHeader h1 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
+  color: var(--on_surface);
+}
+
+.liveSub {
+  margin-top: 4px;
+  font-size: 0.875rem;
+  color: var(--on_surface_variant);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.livePills {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.pillCount,
+.pillUpdate {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 7px 12px;
+  border-radius: 999px;
+  border: none;
+  background: var(--surface_container_highest);
+  color: var(--on_surface);
+}
+
+.pillUpdate {
+  background: var(--glass-bg);
+  color: var(--primary_fixed);
+}
+
+/* Tabs */
+.liveTabs {
+  display: flex;
+  gap: 8px;
+  margin: 10px 0 12px;
+  padding: 8px;
+  background: var(--surface_container_low);
+  border-radius: var(--radius-xl);
+  flex-wrap: wrap;
+}
+
+.liveTab {
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: var(--radius-lg);
+  border: none;
+  background: transparent;
+  color: var(--on_surface_variant);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.liveTab:hover {
+  background: var(--surface_container_high);
+  color: var(--on_surface);
+}
+
+.liveTab.active {
+  color: var(--primary_fixed);
+  background: var(--surface_container_highest);
+}
+
+/* Toolbar */
+.liveToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.liveSearch {
+  flex: 1;
+}
+
+.liveSearch input {
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--outline_variant);
+  outline: none;
+  background: var(--surface_container_low);
+  color: var(--on_surface);
+  font-size: 0.875rem;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.liveSearch input::placeholder {
+  color: var(--on_surface_variant);
+}
+
+.liveSearch input:focus {
+  border-color: var(--primary_container);
+  
+}
+
+.liveFilters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.liveFilters select {
+  padding: 12px 16px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--outline_variant);
+  outline: none;
+  background: var(--surface_container_low);
+  color: var(--on_surface);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.moreBtn {
+  padding: 12px 16px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--outline_variant);
+  background: var(--surface_container_highest);
+  color: var(--on_surface);
+  cursor: pointer;
+  font-weight: 600;
+  transition: box-shadow 0.2s ease;
+}
+
+.moreBtn:hover {
+  box-shadow: 0 0 12px var(--secondary_container);
+}
+
+/* Slider row */
+.liveSliderRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius-xl);
+  border: none;
+  background: var(--surface_container_high);
+  margin-bottom: 14px;
+}
+
+.sliderLabel {
+  font-size: 0.875rem;
+  color: var(--on_surface);
+  font-weight: 700;
+  min-width: 120px;
+}
+
+.slider {
+  flex: 1;
+}
+
+/* List */
+.liveList {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* Card */
+.liveCard {
+  background: var(--surface_container_low);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+
+  box-shadow: var(--shadow-ambient);
+}
+
+.liveCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--on_surface);
+}
+
+.tRound {
+  font-size: 0.75rem;
+  color: var(--primary_fixed);
+  font-weight: 700;
+  margin-left: 6px;
+  text-transform: uppercase;
+}
+
+.liveMeta {
+  margin-top: 4px;
+  font-size: 0.75rem;
+  color: var(--on_surface_variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.liveBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #FF0055;
+  color: var(--on_surface);
+  border: none;
+  text-transform: uppercase;
+}
+
+.upBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(0, 255, 163, 0.1);
+  border: 1px solid rgba(0, 255, 163, 0.2);
+  color: var(--primary_container);
+  text-transform: uppercase;
+}
+
+.recentBadge {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--glass-bg);
+  border: none;
+  color: var(--on_surface_variant);
+  text-transform: uppercase;
+}
+
+/* Body */
+.liveBody {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 12px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.holeInfo {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--primary_container);
+  background: var(--surface_container_highest);
+  border: none;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  text-align: center;
+}
+
+/* Players */
+.playerList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.playerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius-lg);
+  border: none;
+  background: var(--surface_container_high);
+}
+
+.playerRow.leader {
+  background: rgba(0, 255, 163, 0.1);
+  border: 1px solid var(--primary_container);
+}
+
+.playerName {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: var(--on_surface);
+}
+
+.playerScore {
+  font-weight: 900;
+  font-size: 1rem;
+  color: var(--primary_container);
+}
+
+/* Actions */
+.liveActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.liveActions .smallBtn,
+.liveActions .ghostBtn {
+  flex: 1;
+}
+
+.liveActions .ghostBtn {
+  margin-top: 0;
+}
+
+/* Empty */
+.emptyLive {
+  margin-top: 18px;
+  padding: 24px;
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--outline_variant);
+  background: var(--surface_container_lowest);
+  color: var(--on_surface_variant);
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* Responsive */
+@media (max-width: 920px) {
+  .liveList {
+    grid-template-columns: 1fr;
+  }
+  .liveBody {
+    grid-template-columns: 1fr;
+  }
+  .liveToolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .liveFilters {
+    width: 100%;
+  }
+  .liveFilters select,
+  .moreBtn {
+    width: 100%;
+  }
+}
+
+/* 3-column layout for Live page */
+.liveGrid {
+  display: grid;
+  grid-template-columns: 280px 1fr 320px;
+  gap: 2rem;
+  align-items: start;
+}
+
+/* Sidebars */
+.liveSide {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.stickySide {
+  position: sticky;
+  top: 80px; /* navbar height + margin */
+}
+
+/* Center column */
+.liveCenter {
+  min-width: 0;
+}
+
+/* Side cards (ads / featured) */
+.sideCard {
+  background: var(--surface_container_low);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+
+  box-shadow: var(--shadow-ambient);
+}
+
+.sideTitle {
+  margin: 0 0 12px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--on_surface);
+}
+
+.sideText {
+  margin: 0 0 12px;
+  font-size: 0.875rem;
+  color: var(--on_surface_variant);
+  line-height: 1.45;
+}
+
+/* Featured video box */
+.featuredVideo {
+  width: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: none;
+  background: var(--surface_container_highest);
+  margin-bottom: 10px;
+  
+}
+
+.featuredVideo iframe {
+  width: 100%;
+  height: 180px;
+  border: 0;
+  display: block;
+}
+
+/* Make list 1 column (one line) */
+.liveList.oneLine {
+  grid-template-columns: 1fr !important;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .liveGrid {
+    grid-template-columns: 1fr;
+  }
+  .stickySide {
+    position: static;
+  }
+}

@@ -1,0 +1,124 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+:root {
+  /* Premium Deep Navy / Emerald Palette */
+  --primary: #34d399;
+  --primary_container: #10b981;
+  --on_primary_container: #ffffff;
+  
+  --secondary_container: #047857;
+  --on_secondary_container: #ffffff;
+  
+  --surface: #0f172a;
+  --surface_container_lowest: #0b0e14;
+  --surface_container_low: #1e293b;
+  --surface_container_high: #334155;
+  --surface_container_highest: #475569;
+  
+  --surface-rgb: 15, 23, 42;
+  --primary-rgb: 52, 211, 153;
+
+  --on_surface: #e2e8f0;
+  --on_surface_variant: #94a3b8;
+  --outline_variant: rgba(255, 255, 255, 0.05);
+  
+  --primary_fixed: #10b981;
+  
+  /* Signature Effects */
+  --shadow-ambient: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(255,255,255, 0.03);
+  --signature-gradient: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+  
+  /* Radii */
+  --radius-lg: 0.5rem; /* 8px */
+  --radius-xl: 0.75rem; /* 12px */
+}
+
+:root[data-theme="light"] {
+  /* Premium Light Palette */
+  --primary: #10b981;
+  --primary_container: #059669;
+  --on_primary_container: #ffffff;
+  
+  --secondary_container: #047857;
+  --on_secondary_container: #FFFFFF;
+  
+  --surface: #f8fafc;
+  --surface_container_lowest: #FFFFFF;
+  --surface_container_low: #f1f5f9;
+  --surface_container_high: #E2E8F0;
+  --surface_container_highest: #CBD5E1;
+  
+  --on_surface: #1e293b;
+  --on_surface_variant: #475569;
+  --outline_variant: rgba(0, 0, 0, 0.05);
+  
+  --primary_fixed: #059669;
+  
+  --shadow-ambient: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --glass-bg: rgba(15, 23, 42, 0.04);
+  
+  --signature-gradient: linear-gradient(180deg, #10b981 0%, #059669 100%);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--surface);
+  color: var(--on_surface_variant);
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
+}
+
+/* Typography Utilities */
+.display-lg {
+  font-size: 3.5rem;
+  line-height: 1.1;
+  font-weight: 800;
+  color: var(--on_surface);
+}
+
+.headline-md {
+  font-size: 1.75rem;
+  letter-spacing: -0.02em;
+  font-weight: 800;
+  color: var(--on_surface);
+}
+
+.label-sm {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Utility for glass */
+.glass-overlay {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* =====================================================
+   Global: Clean Button Effects
+   ===================================================== */
+.primaryBtn,
+.navBtn.primary,
+.adBtn {
+  transition: transform 0.1s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.primaryBtn:hover:not(:disabled),
+.navBtn.primary:hover,
+.adBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}

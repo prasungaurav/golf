@@ -1,0 +1,464 @@
+/* Midnight Cyber Performance - SponsorPage.css */
+
+.spWrap { 
+  padding: 24px; 
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--on_surface);
+}
+
+.spHeader { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: flex-start; 
+  gap: 16px; 
+  margin-bottom: 24px; 
+  flex-wrap: wrap;
+}
+
+.spTitle { 
+  margin: 0; 
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.spSub { 
+  margin-top: 6px; 
+  font-size: 0.875rem; 
+  color: var(--on_surface_variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.muted { color: var(--on_surface_variant); }
+
+.spTopActions { 
+  display: flex; 
+  gap: 10px; 
+  align-items: center; 
+  flex-wrap: wrap; 
+}
+
+.spDivider { 
+  width: 1px; 
+  height: 26px; 
+  background: var(--outline_variant); 
+  margin: 0 6px; 
+}
+
+.spBtn {
+  border: 1px solid var(--outline_variant);
+  background: var(--surface_container_highest);
+  color: var(--on_surface);
+  padding: 10px 14px;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.875rem;
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+
+.spBtn:hover { 
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.spBtnPrimary { 
+  background: var(--signature-gradient); 
+  color: var(--on_primary_container); 
+  border: none; 
+}
+
+.spBtnPrimary:hover { 
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+}
+
+.spBtnDanger { 
+  background: rgba(255, 0, 85, 0.1); 
+  border: 1px solid rgba(255, 0, 85, 0.2); 
+  color: #FF0055; 
+}
+
+.spBtnDanger:hover { 
+  box-shadow: 0 4px 12px rgba(255, 0, 85, 0.2);
+}
+
+.spGrid { 
+  display: grid; 
+  grid-template-columns: 380px 1fr; 
+  gap: 16px; 
+  align-items: start; 
+}
+
+.spCard { 
+  background: var(--surface_container_low); 
+  border: none; 
+  border-radius: var(--radius-lg); 
+  padding: 24px; 
+
+  box-shadow: var(--shadow-ambient);
+}
+
+.spFilters { 
+  display: grid; 
+  grid-template-columns: 1fr 150px; 
+  gap: 10px; 
+  margin-bottom: 16px; 
+}
+
+.spInput {
+  width: 100%;
+  border: 1px solid var(--outline_variant);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  outline: none;
+  background: var(--surface_container_highest);
+  color: var(--on_surface);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.spInput:focus { 
+  border-color: var(--primary_container);
+  
+}
+
+.spList { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+  max-height: 70vh; 
+  overflow: auto; 
+  padding-right: 4px; 
+}
+
+.spItem {
+  text-align: left;
+  border: none;
+  background: var(--surface_container_high);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.spItem:hover { 
+  background: var(--surface_container_highest); 
+}
+
+.spItemActive { 
+  border: 1px solid var(--primary_container); 
+  background: rgba(0, 255, 163, 0.05); 
+}
+
+.spItemTop { 
+  display: flex; 
+  justify-content: space-between; 
+  gap: 10px; 
+  align-items: flex-start; 
+  flex-wrap: wrap;
+}
+
+.spItemTitle { 
+  font-weight: 700; 
+  font-size: 1rem;
+}
+
+.spItemMeta { 
+  margin-top: 6px; 
+  font-size: 0.75rem; 
+  line-height: 1.4; 
+  color: var(--on_surface_variant);
+}
+
+.spChips { 
+  display: flex; 
+  gap: 6px; 
+  flex-wrap: wrap; 
+  justify-content: flex-end; 
+}
+
+.spChip {
+  font-size: 0.6875rem;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: none;
+  background: var(--surface_container_highest);
+  color: var(--on_surface_variant);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.spChip-ok { background: rgba(0, 255, 163, 0.1); color: var(--primary_container); }
+.spChip-warn { background: rgba(245, 158, 11, 0.1); color: #F59E0B; }
+.spChip-info { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
+.spChip-danger { background: rgba(255, 0, 85, 0.1); color: #FF0055; }
+
+.spRightHead { 
+  display: flex; 
+  justify-content: space-between; 
+  gap: 12px; 
+  align-items: flex-start; 
+  margin-bottom: 16px; 
+  flex-wrap: wrap;
+}
+
+.spRightTitle { 
+  font-size: 1.5rem; 
+  font-weight: 700; 
+}
+
+.spRightStatus { 
+  text-align: right; 
+}
+
+.spBig { 
+  font-weight: 900; 
+  color: var(--on_surface);
+}
+
+.spTabs { 
+  display: flex; 
+  gap: 8px; 
+  background: var(--surface_container_low);
+  padding: 10px;
+  border-radius: var(--radius-xl);
+  margin-bottom: 16px; 
+  flex-wrap: wrap; 
+}
+
+.spTab {
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--on_surface_variant);
+  font-size: 0.875rem;
+}
+
+.spTabActive { 
+  background: var(--surface_container_highest);
+  color: var(--primary_fixed);
+}
+
+.spTabBody { 
+  padding-top: 6px; 
+}
+
+.spSectionTitle { 
+  font-weight: 700; 
+  margin-bottom: 12px; 
+  font-size: 1.25rem;
+}
+
+.spSlotGrid { 
+  display: grid; 
+  grid-template-columns: repeat(3, minmax(0, 1fr)); 
+  gap: 12px; 
+}
+
+.spSlotCard { 
+  border: none; 
+  border-radius: var(--radius-lg); 
+  padding: 16px; 
+  background: var(--surface_container_high); 
+}
+
+.spSlotTop { 
+  display: flex; 
+  justify-content: space-between; 
+  gap: 8px; 
+  align-items: flex-start; 
+  flex-wrap: wrap;
+}
+
+.spSlotTitle { 
+  font-weight: 700; 
+  font-size: 1rem;
+}
+
+.spSlotMeta { 
+  margin-top: 10px; 
+  color: var(--on_surface_variant);
+  font-size: 0.875rem;
+}
+
+.spMoney { 
+  font-size: 1.5rem; 
+  font-weight: 900; 
+  color: var(--primary_fixed);
+}
+
+.spBullets { 
+  margin: 0; 
+  padding-left: 18px; 
+  line-height: 1.7; 
+  color: var(--on_surface_variant);
+  font-size: 0.875rem;
+}
+
+.spFormGrid { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 12px; 
+}
+
+.spLabel { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px; 
+  font-weight: 600; 
+  font-size: 0.6875rem; 
+  color: var(--on_surface_variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.spHint { 
+  font-size: 0.75rem; 
+  margin-top: 4px; 
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.spTextarea { 
+  min-height: 90px; 
+  resize: vertical; 
+}
+
+.spRow2 { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 12px; 
+}
+
+.spActions { 
+  display: flex; 
+  gap: 10px; 
+  align-items: center; 
+  margin-top: 8px; 
+  flex-wrap: wrap; 
+  justify-content: flex-end;
+}
+
+.spNote {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  border: none;
+  background: var(--surface_container_highest);
+  font-size: 0.875rem;
+}
+
+.spNoteWarn { 
+  background: rgba(245, 158, 11, 0.1); 
+  color: #F59E0B; 
+}
+
+.spNoteInfo { 
+  background: rgba(0, 255, 163, 0.1); 
+  color: var(--primary_container); 
+}
+
+.spBidList { 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+}
+
+.spBidRow { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  gap: 10px; 
+  border: none; 
+  background: var(--surface_container_high);
+  border-radius: var(--radius-lg); 
+  padding: 16px; 
+  flex-wrap: wrap;
+}
+
+.spBidTop { 
+  display: flex; 
+  gap: 10px; 
+  align-items: center; 
+  flex-wrap: wrap;
+}
+
+.spBidTitle { 
+  font-weight: 700; 
+  font-size: 1rem;
+}
+
+.spUploadBox {
+  border: 1px dashed var(--outline_variant);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  background: var(--surface_container_lowest);
+  color: var(--on_surface_variant);
+  font-weight: 600;
+  text-align: center;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease;
+}
+
+.spUploadBox:hover {
+  background: var(--surface_container_highest);
+  border-color: var(--primary_container);
+}
+
+.spEmpty { 
+  padding: 16px 4px; 
+  color: var(--on_surface_variant);
+  text-align: center;
+}
+
+@media (max-width: 960px) {
+  .spGrid { grid-template-columns: 1fr; }
+  .spRightStatus { text-align: left; }
+  .spSlotGrid { grid-template-columns: 1fr; }
+}
+
+.spHero {
+  border-radius: var(--radius-xl);
+  padding: 24px;
+  color: var(--on_surface);
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(59, 130, 246, 0.05));
+  border: 1px solid rgba(16, 185, 129, 0.1);
+}
+
+.spHeroTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.spHeroMeta {
+  color: var(--on_surface_variant);
+  margin-top: 6px;
+  font-size: 0.875rem;
+}
+
+.spHeroDesc {
+  margin-top: 12px;
+  max-width: 70ch;
+  color: var(--on_surface_variant);
+  line-height: 1.6;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 600px) {
+  .spWrap { padding: 12px; }
+  .spHeader { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .spTopActions { width: 100%; justify-content: space-between; margin-top: 10px; }
+  .spRow2 { grid-template-columns: 1fr; }
+  .spTabs { flex-direction: column; align-items: stretch; }
+  .spTab { text-align: center; }
+}

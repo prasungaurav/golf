@@ -1,0 +1,324 @@
+/* Midnight Cyber Performance - OrganiserChekIn.css */
+
+/* ===== Page ===== */
+.scanPage {
+  min-height: 100vh;
+  padding: 22px;
+  box-sizing: border-box;
+  background: var(--surface);
+  font-family: 'Space Grotesk', sans-serif;
+  color: var(--on_surface);
+}
+
+/* ===== Header ===== */
+.scanHeader {
+  max-width: 1100px;
+  margin: 0 auto 24px auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.scanTitle {
+  margin: 0;
+  font-size: 2.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--on_surface);
+}
+
+.scanSub {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--on_surface_variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+/* Status pill with status variants */
+.scanStatusPill {
+  background: var(--surface_container_highest);
+  border: none;
+  color: var(--on_surface_variant);
+  padding: 10px 16px;
+  border-radius: var(--radius-xl);
+  font-weight: 700;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: background 0.3s, color 0.3s;
+}
+
+.scanStatusPill--scanning {
+  background: rgba(0, 196, 122, 0.1);
+  color: #00c47a;
+}
+
+.scanStatusPill--success {
+  background: rgba(0, 196, 122, 0.2);
+  color: #00c47a;
+  animation: pillPulse 0.5s ease;
+}
+
+.scanStatusPill--warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #F59E0B;
+}
+
+.scanStatusPill--error {
+  background: rgba(255, 0, 85, 0.1);
+  color: #FF0055;
+}
+
+@keyframes pillPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+/* ===== Grid ===== */
+.scanGrid {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+/* ===== Left Card ===== */
+.scanCard {
+  background: var(--surface_container_low);
+  color: var(--on_surface);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  
+  border: none;
+}
+
+.scanCardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.scanCardTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--on_surface);
+}
+
+.scanCamInfo {
+  font-size: 0.75rem;
+  color: var(--on_surface_variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ===== Premium Scanner Frame ===== */
+.scanFrame {
+  position: relative;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  aspect-ratio: 1 / 1;
+}
+
+/* Plain video element — ZXing injects nothing */
+.scanVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: var(--radius-lg);
+  background: #000;
+}
+
+/* html5-qrcode injects video */
+#qr-reader-region {
+  width: 100%;
+  height: 100%;
+}
+#qr-reader-region video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  border-radius: var(--radius-lg);
+}
+/* Hide ugly default UI from library */
+#qr-reader-region img,
+#qr-reader-region select,
+#qr-reader-region button {
+  display: none !important;
+}
+
+/* Corner brackets */
+.scanCorners {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.scanCorner {
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-color: #00c47a;
+  border-style: solid;
+}
+
+.scanCorner.tl { top: 12px; left: 12px; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+.scanCorner.tr { top: 12px; right: 12px; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+.scanCorner.bl { bottom: 12px; left: 12px; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+.scanCorner.br { bottom: 12px; right: 12px; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+
+/* Laser scan line */
+.scanLaser {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #00c47a, transparent);
+  box-shadow: 0 0 12px #00c47a, 0 0 4px #00c47a;
+  animation: laserSweep 2s ease-in-out infinite;
+  z-index: 10;
+  border-radius: 999px;
+}
+
+@keyframes laserSweep {
+  0%   { top: 15%; opacity: 0.6; }
+  50%  { top: 82%; opacity: 1; }
+  100% { top: 15%; opacity: 0.6; }
+}
+
+/* Status flash overlay */
+.scanFlash {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  border-radius: var(--radius-lg);
+  animation: flashFade 0.5s ease forwards;
+}
+
+.scanFlash--success { background: rgba(0, 196, 122, 0.25); }
+.scanFlash--warning { background: rgba(245, 158, 11, 0.25); }
+.scanFlash--error   { background: rgba(255, 0, 85, 0.25); }
+
+@keyframes flashFade {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.scanTip {
+  margin-top: 16px;
+  font-size: 0.875rem;
+  color: var(--on_surface_variant);
+}
+
+/* ===== Right Details ===== */
+.detailCard {
+  background: var(--surface_container_low);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  
+}
+
+.detailHead {
+  margin-bottom: 20px;
+}
+
+.detailTitle {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--on_surface);
+}
+
+.detailSub {
+  margin-top: 6px;
+  font-size: 0.875rem;
+  color: var(--on_surface_variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* empty state */
+.detailEmpty {
+  padding: 40px 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  color: var(--on_surface_variant);
+}
+
+.detailEmptyIcon {
+  opacity: 0.4;
+}
+
+.detailEmptyText {
+  font-size: 0.875rem;
+}
+
+/* data grid */
+.detailGrid {
+  display: grid;
+  gap: 10px;
+}
+
+.detailRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border-radius: var(--radius-lg);
+  background: var(--surface_container_high);
+  border: none;
+}
+
+.detailKey {
+  font-size: 0.75rem;
+  color: var(--on_surface_variant);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 600;
+}
+
+.detailVal {
+  font-weight: 700;
+  font-size: 0.875rem;
+  text-align: right;
+  overflow-wrap: anywhere;
+  color: var(--on_surface);
+}
+
+.detailNote {
+  margin-top: 14px;
+  font-size: 0.875rem;
+  color: var(--on_surface_variant);
+}
+
+/* shared */
+.muted { color: var(--on_surface_variant); }
+
+/* ===== Responsive ===== */
+@media (max-width: 900px) {
+  .scanGrid {
+    grid-template-columns: 1fr;
+  }
+  .scanStatusPill {
+    white-space: normal;
+    text-align: right;
+  }
+}
+
+@media (max-width: 600px) {
+  .scanPage { padding: 12px; }
+  .scanHeader { flex-direction: column; align-items: stretch; gap: 8px; }
+  .scanStatusPill { text-align: center; }
+  .scanCard, .detailCard { padding: 16px; }
+}

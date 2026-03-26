@@ -1,0 +1,164 @@
+/* Midnight Cyber Performance - Register.css */
+.rmOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  z-index: 9999;
+}
+
+.rmModal {
+  width: min(920px, 100%);
+  max-height: 90vh;
+  overflow: auto;
+  background: var(--surface_container_low);
+  border-radius: var(--radius-xl);
+  border: none;
+  
+}
+
+.rmTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 24px 24px 10px;
+}
+
+.rmTop h2 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2rem;
+  color: var(--on_surface);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+
+.rmClose {
+  border: none;
+  background: var(--surface_container_highest);
+  color: var(--on_surface_variant);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  font-weight: 900;
+  transition: color 0.2s ease, background 0.2s ease;
+}
+
+.rmClose:hover {
+  background: var(--surface_container_high);
+  color: var(--on_surface);
+}
+
+.rmBody {
+  padding: 14px 24px 24px;
+}
+
+.muted {
+  color: var(--on_surface_variant);
+  font-size: 0.875rem;
+  margin-top: 6px;
+}
+
+.section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid var(--outline_variant);
+}
+
+.sectionTitle {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: var(--on_surface);
+  margin-bottom: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.field label {
+  font-weight: 600;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--on_surface_variant);
+}
+
+.field input,
+.field select {
+  border: 1px solid var(--outline_variant);
+  background: var(--surface_container_highest);
+  color: var(--on_surface);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  outline: none;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--primary_container);
+  
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.full {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.err {
+  color: #FF0055;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: 4px;
+  padding-left: 4px;
+}
+
+.submitBtn {
+  width: 100%;
+  margin-top: 24px;
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: 14px 16px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  background: var(--signature-gradient);
+  color: var(--on_primary_container);
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+
+.submitBtn:hover {
+  box-shadow: 0 0 20px var(--secondary_container);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 600px) {
+  .rmOverlay { padding: 10px; }
+  .rmModal { border-radius: var(--radius-lg); }
+  .rmTop h2 { font-size: 1.5rem; }
+  .rmTop { padding: 16px 16px 10px; }
+  .rmBody { padding: 10px 16px 16px; }
+}

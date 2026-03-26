@@ -1,0 +1,375 @@
+/* Midnight Cyber Performance - DashboardManage.css */
+
+.dmWrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 16px 60px;
+}
+
+.muted {
+  color: var(--on_surface_variant);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.dmHeader {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.dmHeader h1 {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 2.5rem;
+  letter-spacing: -0.02em;
+  color: var(--on_surface);
+  font-weight: 700;
+}
+
+.dmHeaderActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* ===== Buttons ===== */
+.primaryBtn,
+.ghostBtn,
+.chipBtn,
+.dangerBtn {
+  border: none;
+  border-radius: var(--radius-xl);
+  padding: 12px 16px;
+  cursor: pointer;
+  font-weight: 700;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+  font-size: 0.875rem;
+}
+
+.primaryBtn:hover,
+.ghostBtn:hover,
+.chipBtn:hover,
+.dangerBtn:hover {
+  transform: translateY(-1px);
+}
+
+.primaryBtn {
+  background: var(--signature-gradient);
+  color: var(--on_primary_container);
+}
+
+.primaryBtn:hover:not(:disabled) {
+  box-shadow: 0 0 20px var(--secondary_container);
+}
+
+.ghostBtn {
+  background: var(--surface_container_highest);
+  color: var(--on_surface);
+  border: 1px solid var(--outline_variant);
+}
+
+.ghostBtn:hover:not(:disabled) {
+  box-shadow: 0 0 12px var(--secondary_container);
+}
+
+.chipBtn {
+  background: var(--glass-bg);
+  color: var(--on_surface_variant);
+  border: 1px solid var(--outline_variant);
+}
+
+.dangerBtn {
+  background: rgba(255, 0, 85, 0.1);
+  color: #FF0055;
+  border: 1px solid rgba(255, 0, 85, 0.2);
+}
+
+.dangerBtn:hover:not(:disabled) {
+  box-shadow: 0 0 12px rgba(255, 0, 85, 0.5);
+}
+
+.primaryBtn:disabled,
+.ghostBtn:disabled,
+.chipBtn:disabled,
+.dangerBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* ===== Cards ===== */
+.dmCard {
+  background: var(--surface_container_low);
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-top: 14px;
+
+  box-shadow: var(--shadow-ambient);
+}
+
+.dmCardHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.dmCardHead h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--on_surface);
+  font-weight: 700;
+}
+
+.dmCardHead.small h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--on_surface);
+  font-weight: 700;
+}
+
+/* ===== Grid blocks ===== */
+.dmGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 900px) {
+  .dmHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .dmGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Item Card ===== */
+.dmItem {
+  border: none;
+  background: var(--surface_container_high);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.dmItemTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.dmRowBtns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+/* small badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--surface_container_highest);
+  color: var(--primary_fixed);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: none;
+}
+
+/* ===== Inputs ===== */
+.dmLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--on_surface_variant);
+  margin-bottom: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dmLabel input,
+.dmInput {
+  width: 100%;
+  border: 1px solid var(--outline_variant);
+  border-radius: var(--radius-lg);
+  padding: 12px 14px;
+  outline: none;
+  background: var(--surface_container_highest);
+  color: var(--on_surface);
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.dmLabel input:focus,
+.dmInput:focus {
+  border-color: var(--primary_container);
+  
+}
+
+.dmRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 700px) {
+  .dmRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ===== Preview box for slide image ===== */
+.dmPreview {
+  width: 100%;
+  height: 160px;
+  border-radius: var(--radius-lg);
+  margin-top: 10px;
+  background-size: cover;
+  background-position: center;
+  border: none;
+  
+  overflow: hidden;
+  background-color: var(--surface_container_highest);
+}
+
+/* ===== Table-ish rows ===== */
+.dmTable {
+  display: grid;
+  gap: 10px;
+}
+
+.dmTableRow {
+  display: grid;
+  grid-template-columns: 50px 1fr 130px 110px;
+  gap: 12px;
+  align-items: center;
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  background: var(--surface_container_high);
+}
+
+.dmTableRow .rank {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--glass-bg);
+  color: var(--primary_fixed);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+@media (max-width: 700px) {
+  .dmTableRow {
+    grid-template-columns: 1fr;
+  }
+  .dmTableRow .rank {
+    width: 100%;
+  }
+}
+
+/* ===== Media split ===== */
+.dmSplit {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 920px) {
+  .dmSplit {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dmSubCard {
+  border: none;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  background: var(--surface_container_high);
+}
+
+.dmMini {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background: var(--surface_container_highest);
+  border: none;
+  margin-top: 12px;
+}
+
+/* ===== Photos list ===== */
+.dmPhotoList {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.dmPhotoRow {
+  display: grid;
+  grid-template-columns: 60px 1fr 110px;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-radius: var(--radius-lg);
+  background: var(--surface_container_highest);
+  border: none;
+}
+
+@media (max-width: 700px) {
+  .dmPhotoRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+.dmPhotoThumb {
+  width: 60px;
+  height: 44px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  border: none;
+}
+
+/* ===== JSON Code Preview ===== */
+.dmCode {
+  background: #000;
+  color: var(--primary_fixed);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  overflow: auto;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  border: 1px solid var(--outline_variant);
+  max-height: 420px;
+  font-family: 'Space Grotesk', monospace;
+}
+
+/* ===== Small quality-of-life ===== */
+.dmCard h3,
+.dmCard h2 {
+  letter-spacing: -0.02em;
+}
