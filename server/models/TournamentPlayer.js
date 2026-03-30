@@ -7,7 +7,7 @@ const TournamentPlayerSchema = new mongoose.Schema(
 
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected", "waitlist", "blocked"],
+      enum: ["pending", "approved", "rejected", "waitlist", "blocked", "invitation_pending", "awaiting_friends", "withdrawn"],
       default: "pending",
       index: true,
     },
@@ -36,7 +36,7 @@ const TournamentPlayerSchema = new mongoose.Schema(
     registrationGroupId: { type: String, default: "", index: true }, // Links players registered in the same session
 
     // ✅ Entry pass (QR)
-    entryCode: { type: String, default: "", index: true },
+    entryCode: { type: String, index: true },
     entrySecret: { type: String, default: "" },
     entryIssuedAt: { type: Date, default: null },
 
@@ -49,7 +49,7 @@ const TournamentPlayerSchema = new mongoose.Schema(
 
 TournamentPlayerSchema.index({ tournamentId: 1, playerId: 1 }, { unique: true });
 
-// optional: unique entryCode per tournament (sparse so empty allowed)
-TournamentPlayerSchema.index({ tournamentId: 1, entryCode: 1 }, { unique: true, sparse: true });
+// optional: unique entryCode per tournament (REMOVED UNIQUE TO PREVENT E11000 UNTIL PARTIAL INDEX WORKS)
+TournamentPlayerSchema.index({ tournamentId: 1, entryCode: 1 });
 
 module.exports = mongoose.model("TournamentPlayer", TournamentPlayerSchema);

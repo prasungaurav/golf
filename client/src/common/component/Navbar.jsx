@@ -9,6 +9,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import Register from "./Register";
 import Login from "./Login";
 import { useAuth } from "./AuthContext";
+import NotificationCenter from "./NotificationCenter";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
@@ -82,11 +83,7 @@ export default function Navbar() {
             News
           </NavLink>
         </li>
-        <li>
-          <NavLink to="/rules" className="navItem">
-            Rules
-          </NavLink>
-        </li>
+
 
         {/* ✅ Extra (role-based) links in the SAME header */}
         {session && userRole === "admin" && (
@@ -168,6 +165,8 @@ export default function Navbar() {
             )}
           </button>
 
+          {session && <NotificationCenter />}
+
           {!session ? (
             <>
               <Link
@@ -226,6 +225,7 @@ export default function Navbar() {
                     <>
                       <Link to="/organiser/profile" className="navBubbleItem" onClick={() => setOpenBubble(false)}>My Profile</Link>
                       <Link to="/organiser/tournaments" className="navBubbleItem" onClick={() => setOpenBubble(false)}>Manage Tournaments</Link>
+                      <Link to="/admin/dashboard" className="navBubbleItem" onClick={() => setOpenBubble(false)}>Manage Dashboard</Link>
                       <div className="navBubbleSep" />
                     </>
                   )}
@@ -241,6 +241,8 @@ export default function Navbar() {
                       <div className="navBubbleSep" />
                     </>
                   )}
+                  <Link to="/leaderboard" className="navBubbleItem" onClick={() => setOpenBubble(false)}>Leaderboard</Link>
+                  <Link to="/rules" className="navBubbleItem" onClick={() => setOpenBubble(false)}>Rules</Link>
                   <button className="navBubbleItem danger" onClick={logout} type="button">
                     Logout
                   </button>

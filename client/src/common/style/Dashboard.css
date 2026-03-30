@@ -119,6 +119,99 @@
   border-radius: 4px;
 }
 
+/* NEWS RIBBON */
+.news-ribbon {
+  display: flex;
+  align-items: center;
+  background: var(--surface_container_highest);
+  border-top: 1px solid var(--outline_variant);
+  border-bottom: 1px solid var(--outline_variant);
+  height: 44px;
+  overflow: hidden;
+  position: relative;
+  z-index: 5;
+}
+
+.ribbon-label {
+  background: var(--primary);
+  color: white;
+  padding: 0 16px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  white-space: nowrap;
+  box-shadow: 10px 0 20px rgba(0,0,0,0.2);
+  z-index: 2;
+}
+
+.ribbon-content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.ribbon-track {
+  display: flex;
+  white-space: nowrap;
+  animation: ticker 30s linear infinite;
+}
+
+.ribbon-track:hover {
+  animation-play-state: paused;
+}
+
+.ribbon-item {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--on_surface);
+  padding: 0 30px;
+}
+
+.ribbon-item .dot {
+  width: 6px;
+  height: 6px;
+  background: var(--primary);
+  margin-right: 12px;
+  border-radius: 50%;
+}
+
+.ribbon-btn {
+  background: var(--surface_container_low);
+  color: var(--primary);
+  border: none;
+  border-left: 1px solid var(--outline_variant);
+  height: 100%;
+  padding: 0 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 0.2s;
+  z-index: 2;
+}
+
+.ribbon-btn:hover {
+  background: var(--surface_container_high);
+}
+
+.ribbon-btn i {
+  font-size: 16px;
+}
+
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
 /* Main layout */
 .mainGrid {
   margin: 18px auto 22px;
@@ -145,8 +238,8 @@
   background: var(--surface_container_low);
   border-radius: var(--radius-lg);
   padding: 24px;
-  
-  min-height: 15rem;
+
+  min-height: auto;
   flex: 1;
 
   box-shadow: var(--shadow-ambient);

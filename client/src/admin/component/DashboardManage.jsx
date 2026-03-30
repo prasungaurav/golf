@@ -130,6 +130,7 @@ export default function DashboardManage() {
       dur: "06:08",
     },
   ]);
+  const [rulesSummary, setRulesSummary] = useState([]);
 
   useEffect(() => {
     fetch(`${apiBase}/api/admin/dashboard`, { credentials: "include" })
@@ -146,6 +147,7 @@ export default function DashboardManage() {
             if (conf.media.photos?.length) setPhotos(conf.media.photos);
             if (conf.media.videos?.length) setVideos(conf.media.videos);
           }
+          if (conf.rulesSummary?.length) setRulesSummary(conf.rulesSummary);
         }
       })
       .catch(console.error);
@@ -160,6 +162,7 @@ export default function DashboardManage() {
         liveMatches,
         upcomingMatches,
         media: { newsItems, photos, videos },
+        rulesSummary,
       },
       null,
       2
@@ -674,6 +677,40 @@ export default function DashboardManage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ========= RULES SUMMARY ========= */}
+      <section className="dmCard">
+        <div className="dmCardHead">
+          <h2>Rules Summary (Teaser)</h2>
+          <button
+            className="chipBtn"
+            onClick={() => setRulesSummary((p) => [...p, ""])}
+          >
+            + Add Point
+          </button>
+        </div>
+        <div className="dmTable">
+          {rulesSummary.map((r, idx) => (
+            <div className="dmTableRow" key={idx}>
+              <input
+                className="dmInput"
+                placeholder="Rule point e.g. Respect all players"
+                value={r}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setRulesSummary((p) => p.map((it, i) => (i === idx ? val : it)));
+                }}
+              />
+              <button
+                className="dangerBtn"
+                onClick={() => setRulesSummary((p) => p.filter((_, i) => i !== idx))}
+              >
+                Remove
+              </button>
+            </div>
+          ))}
         </div>
       </section>
 

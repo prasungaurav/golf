@@ -98,12 +98,12 @@ export default function Live() {
         standing: standing,
         players: [
           {
-            name: m.playerA?.name || "Player A",
+            name: m.teamA?.[0]?.playerName || m.teamAName || "Player A",
             score: pA_display,
             leader: (m.scoreA ?? 0) < (m.scoreB ?? 0),
           },
           {
-            name: m.playerB?.name || "Player B",
+            name: m.teamB?.[0]?.playerName || m.teamBName || "Player B",
             score: pB_display,
             leader: (m.scoreB ?? 0) < (m.scoreA ?? 0),
           },

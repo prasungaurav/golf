@@ -537,7 +537,14 @@ export default function Tournament() {
     if (st === "pending") {
       return (
         <button className="primaryBtn" disabled style={{ height: '32px', padding: '0 12px', fontSize: '11px', fontWeight: 700, borderRadius: '6px', width: 'auto', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          PENDING
+          PENDING APPROVAL
+        </button>
+      );
+    }
+    if (st === "awaiting_friends") {
+      return (
+        <button className="primaryBtn" disabled style={{ height: '32px', padding: '0 12px', fontSize: '11px', fontWeight: 700, borderRadius: '6px', width: 'auto', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          AWAITING FRIENDS APPROVAL
         </button>
       );
     }
@@ -1297,7 +1304,7 @@ const PartnerSelectionModal = ({ show, onClose, t, friendsList, teamName, setTea
         <div className="partnerSlots">
           {slots.map((slot, i) => (
             <div key={i} className="memberSlot">
-              <div 
+              <div
                 className={`slotCircle ${slot.type === 'me' ? 'me' : (slot.id ? 'filled' : 'empty')}`}
                 onClick={() => slot.type === 'partner' && !slot.id && setActiveSlotIdx(slot.idx)}
               >
@@ -1321,12 +1328,12 @@ const PartnerSelectionModal = ({ show, onClose, t, friendsList, teamName, setTea
               availableFriends.map(f => {
                 const isBlocked = f.status === "blocked";
                 return (
-                  <div 
-                    key={f._id} 
-                    className={`pickerItem ${isBlocked ? 'blocked' : ''}`} 
+                  <div
+                    key={f._id}
+                    className={`pickerItem ${isBlocked ? 'blocked' : ''}`}
                     onClick={() => !isBlocked && handleSelectFriend(f._id)}
-                    style={{ 
-                      opacity: isBlocked ? 0.6 : 1, 
+                    style={{
+                      opacity: isBlocked ? 0.6 : 1,
                       cursor: isBlocked ? 'not-allowed' : 'pointer',
                       pointerEvents: isBlocked ? 'none' : 'auto'
                     }}
@@ -1349,8 +1356,8 @@ const PartnerSelectionModal = ({ show, onClose, t, friendsList, teamName, setTea
 
         <div className="modalActions">
           <button className="tOutlineBtn" onClick={onClose}>Cancel</button>
-          <button 
-            className="primaryBtn" 
+          <button
+            className="primaryBtn"
             disabled={registering || !teamName.trim() || partnerIds.filter(Boolean).length < maxPartners}
             onClick={onConfirm}
           >
@@ -1360,4 +1367,4 @@ const PartnerSelectionModal = ({ show, onClose, t, friendsList, teamName, setTea
       </div>
     </div>
   );
-};
+};

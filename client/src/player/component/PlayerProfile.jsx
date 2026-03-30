@@ -1,11 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../common/component/AuthContext";
+import { useParams, Link } from "react-router-dom";
 import "../../common/style/Profile.css";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function PlayerProfile() {
-  const { user } = useAuth();
+  const { id } = useParams();
+  const { user: currentUser } = useAuth();
+  const [profileUser, setProfileUser] = useState(null);
+  const isOwnProfile = !id || (currentUser && id === currentUser._id);
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -14,27 +18,45 @@ export default function PlayerProfile() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [activeTab, setActiveTab] = useState("tournaments"); // tournaments, match_history, friends
+  const [globalRank, setGlobalRank] = useState(null);
 
   const fetchPlayerData = async () => {
     try {
       setLoading(true);
       setError("");
 
-      const [regRes, friendRes, reqRes] = await Promise.all([
-        fetch(`${API_BASE}/api/tournaments/players/me`, { credentials: "include" }),
-        fetch(`${API_BASE}/api/friends/list`, { credentials: "include" }),
-        fetch(`${API_BASE}/api/friends/requests`, { credentials: "include" })
-      ]);
+      if (isOwnProfile) {
+        setProfileUser(currentUser);
+        const [regRes, friendRes, reqRes, rankRes] = await Promise.all([
+          fetch(`${API_BASE}/api/tournaments/players/me`, { credentials: "include" }),
+          fetch(`${API_BASE}/api/friends/list`, { credentials: "include" }),
+          fetch(`${API_BASE}/api/friends/requests`, { credentials: "include" }),
+          fetch(`${API_BASE}/api/matches/me/rank`, { credentials: "include" })
+        ]);
 
-      const regData = await regRes.json();
-      const friendData = await friendRes.json();
-      const reqData = await reqRes.json();
+        const regData = await regRes.json();
+        const friendData = await friendRes.json();
+        const reqData = await reqRes.json();
+        const rankData = await rankRes.json();
 
-      if (!regRes.ok) throw new Error(regData?.message || "Failed to fetch tournaments");
-      
-      setItems(regData.items || []);
-      setFriends(friendData.friends || []);
-      setRequests({ incoming: reqData.incoming || [], outgoing: reqData.outgoing || [] });
+        if (!regRes.ok) throw new Error(regData?.message || "Failed to fetch tournaments");
+        
+        setItems(regData.items || []);
+        setFriends(friendData.friends || []);
+        setRequests({ incoming: reqData.incoming || [], outgoing: reqData.outgoing || [] });
+        if (rankData.ok) setGlobalRank(rankData.rank);
+      } else {
+        // Public profile
+        const res = await fetch(`${API_BASE}/api/matches/profile/${id}`, { credentials: "include" });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Failed to fetch profile");
+        
+        setProfileUser(data.user);
+        setGlobalRank(data.rank);
+        setItems(data.items || []);
+        setFriends([]); // Hide for public
+        setRequests({ incoming: [], outgoing: [] });
+      }
     } catch (e) {
       console.error(e);
       setError(e.message);
@@ -81,12 +103,12 @@ export default function PlayerProfile() {
 
   const stats = {
     totalMatches: items.length,
-    wins: items.filter(x => x.status === 'completed' && x.result === 'Won').length || 0,
-    losses: items.filter(x => x.status === 'completed' && x.result === 'Lost').length || 0,
+    wins: profileUser?.wins || 0,
+    losses: profileUser?.losses || 0,
     avgScore: items.filter(x => x.score).reduce((acc, x, i, arr) => acc + Number(x.score) / arr.length, 0).toFixed(1) || "—",
     bestScore: Math.min(...items.filter(x => x.score).map(x => Number(x.score))) || "—",
-    ranking: user?.ranking || "#—",
-    handicap: user?.handicap || "—",
+    ranking: globalRank ? `#${globalRank}` : "#—",
+    handicap: profileUser?.handicap || "—",
     friendsCount: friends.length
   };
 
@@ -111,15 +133,15 @@ export default function PlayerProfile() {
       {/* Basic Info Header */}
       <header className="profile-header">
         <div className="profile-avatar-large">
-          {user?.name?.[0] || user?.playerName?.[0] || "P"}
+          {(profileUser?.playerName || profileUser?.name || "P")[0].toUpperCase()}
         </div>
         <div className="profile-info">
-          <h1>{user?.name || user?.playerName || "Player Name"}</h1>
-          <p>{user?.email || user?.playerEmail || "player@example.com"}</p>
+          <h1>{profileUser?.playerName || profileUser?.name || "Player Name"}</h1>
+          <p>{isOwnProfile ? (profileUser?.email || "player@example.com") : "Verified Player"}</p>
           <div className="profile-badges">
             <span className="badge-item">Handicap: {stats.handicap}</span>
             <span className="badge-item">Rank: {stats.ranking}</span>
-            <span className="badge-item">Friends: {stats.friendsCount}</span>
+            {isOwnProfile && <span className="badge-item">Friends: {stats.friendsCount}</span>}
           </div>
         </div>
       </header>
@@ -153,14 +175,16 @@ export default function PlayerProfile() {
         >
           Tournaments
         </button>
-        <button 
-          className={`tab-item ${activeTab === 'friends' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('friends')}
-          style={{ padding: '10px 0', borderBottom: activeTab === 'friends' ? '2px solid var(--primary)' : 'none', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', color: activeTab === 'friends' ? 'var(--primary)' : 'var(--on_surface_variant)', cursor: 'pointer', fontWeight: 600 }}
-        >
-          Friends ({stats.friendsCount})
-          {requests.incoming.length > 0 && <span style={{ marginLeft: 6, background: 'var(--primary)', color: 'white', padding: '0 6px', borderRadius: 10, fontSize: 10 }}>{requests.incoming.length}</span>}
-        </button>
+        {isOwnProfile && (
+          <button 
+            className={`tab-item ${activeTab === 'friends' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('friends')}
+            style={{ padding: '10px 0', borderBottom: activeTab === 'friends' ? '2px solid var(--primary)' : 'none', background: 'none', borderTop: 'none', borderLeft: 'none', borderRight: 'none', color: activeTab === 'friends' ? 'var(--primary)' : 'var(--on_surface_variant)', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Friends ({stats.friendsCount})
+            {requests.incoming.length > 0 && <span style={{ marginLeft: 6, background: 'var(--primary)', color: 'white', padding: '0 6px', borderRadius: 10, fontSize: 10 }}>{requests.incoming.length}</span>}
+          </button>
+        )}
         <button 
           className={`tab-item ${activeTab === 'match_history' ? 'active' : ''}`} 
           onClick={() => setActiveTab('match_history')}
@@ -197,7 +221,13 @@ export default function PlayerProfile() {
                       <td>{fmtDMY(t.startDate)}</td>
                       <td>{t.course || "—"}</td>
                       <td><span className={`status-pill ${(x.status || 'pending').toLowerCase()}`}>{x.status}</span></td>
-                      <td><button className="smallBtn" style={{color: 'var(--on_surface_variant)'}}>Withdraw</button></td>
+                      <td>
+                        {isOwnProfile ? (
+                          <button className="smallBtn" style={{color: 'var(--on_surface_variant)'}}>Withdraw</button>
+                        ) : (
+                          <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>Locked</span>
+                        )}
+                      </td>
                     </tr>
                   );
                 })}

@@ -6,11 +6,16 @@ import Dashboard from "./Dashboard";
 import Navbar from "./Navbar";
 import Live from "./Live";
 import Tournament from "./Tournament";
+import News from "./News";
+import Rules from "./Rules";
+import Leaderboard from "./Leaderboard";
+import Footer from "./Footer";
 
 import DashboardManage from "../../admin/component/DashboardManage";
 import LiveManage from "../../admin/component/LiveManage";
 import TournamentManage from "../../admin/component/TournamentManage";
 import AdminUserList from "../../admin/component/AdminUserList"; // New import
+import AdminNewsManage from "../../admin/component/NewsManage";
 
 import OrganiserManageTournaments from "../../organizer/component/ManageTournament";
 import SponsorPage from "../../sponser/component/Sponser";
@@ -55,6 +60,9 @@ function App() {
         <Route path="/" element={<Dashboard />} />
         <Route path="/live" element={<Live />} />
         <Route path="/tournaments" element={<Tournament />} />
+        <Route path="/news" element={<News />} />
+        <Route path="/rules" element={<Rules />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/blocked" element={<Blocked />} />
 
         <Route path="/admin/dashboard" element={<DashboardManage />} />
@@ -62,6 +70,7 @@ function App() {
         <Route path="/admin/tournaments" element={<TournamentManage />} />
         <Route path="/admin/profile" element={<AdminProfile />} />
         <Route path="/admin/users" element={<AdminUserList />} />
+        <Route path="/admin/news" element={<AdminNewsManage />} />
 
         <Route path="/organiser/tournaments" element={<OrganiserManageTournaments />} />
 
@@ -70,6 +79,7 @@ function App() {
         <Route path="/player/register" element={<PlayerMyTournaments />} />
         <Route path="/player/entry-pass/:tid" element={<PlayerEntryPass />} />
         <Route path="/player/profile" element={<PlayerProfile />} />
+        <Route path="/profile/:id" element={<PlayerProfile />} />
 
         <Route path="/organiser/checkin/:tid" element={<OrganiserCheckIn />} />
         <Route path="/organiser/profile" element={<OrganiserProfile />} />
@@ -77,6 +87,8 @@ function App() {
         <Route path="/sponsor/profile" element={<SponsorProfile />} />
         <Route path="/admin/profile" element={<AdminProfile />} />
       </Routes>
+
+      {!hideChrome && <Footer />}
     </div>
   );
 }

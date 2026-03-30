@@ -1,0 +1,247 @@
+.my-matches-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.my-matches-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.match-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+  overflow: hidden;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: 1px solid #efefef;
+}
+
+.match-card:hover {
+  box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.match-card-content {
+  padding: 20px;
+}
+
+.match-main-info {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.match-details-basic {
+  flex: 1;
+}
+
+.match-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0 0 8px 0;
+  color: var(--primary);
+}
+
+.match-meta-info {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 12px;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meta-item i {
+  font-size: 1.1rem;
+}
+
+.match-status-badge {
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-approved { background: #e8f5e9; color: #2e7d32; }
+.status-pending { background: #fff3e0; color: #ef6c00; }
+.status-waitlist { background: #e3f2fd; color: #1565c0; }
+.status-blocked { background: #ffebee; color: #c62828; }
+.status-invitation_pending { background: #f3e5f5; color: #7b1fa2; border: 1px dashed #7b1fa2; }
+.status-awaiting_friends { background: #e0f2f1; color: #00796b; }
+.status-withdrawn { background: #eeeeee; color: #757575; opacity: 0.8; }
+.status-rejected { background: #fafafa; color: #bdbdbd; text-decoration: line-through; }
+
+.teammates-section {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+}
+
+.teammates-title {
+  font-size: 0.9rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.teammates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.teammate-item {
+  background: #f8f9fa;
+  padding: 12px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  transition: all 0.2s;
+}
+
+.teammate-item.leader {
+  background: #fff8e1;
+  border-color: #ffd54f;
+}
+
+.teammate-item.blocked {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.teammate-avatar {
+  width: 36px;
+  height: 36px;
+  background: var(--primary);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+.teammate-avatar.vacant {
+  background: transparent;
+  border: 2px dashed #ccc;
+  color: #ccc;
+}
+
+.teammate-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.teammate-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.teammate-sub {
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.replacement-slot, .empty-slot {
+  border: 2px dashed #ccc;
+  background: #fff;
+  justify-content: center;
+  color: #888;
+  height: 60px;
+}
+
+.replacement-slot {
+  cursor: pointer;
+}
+
+.replacement-slot:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #f0f4ff;
+}
+
+.empty-slot {
+  opacity: 0.7;
+  cursor: default;
+}
+
+.replacement-slot i, .empty-slot i {
+  font-size: 1.5rem;
+}
+
+.action-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Modal styles for friend selection */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+
+.friend-modal {
+  background: white;
+  width: 100%;
+  max-width: 450px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-body {
+  padding: 20px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.friend-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.friend-list-item:hover {
+  background: #f0f4ff;
+}
+
+.friend-list-item.selected {
+  background: var(--primary_container);
+  border: 1px solid var(--primary);
+}

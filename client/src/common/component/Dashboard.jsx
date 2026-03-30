@@ -1,7 +1,11 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from "./AuthContext";
 import "../style/Dashboard.css";
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const { userRole } = useAuth();
   const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const [heroSlides, setHeroSlides] = useState([
@@ -14,22 +18,41 @@ export default function Dashboard() {
   const [newsItems, setNewsItems] = useState([]);
   const [photos, setPhotos] = useState([]);
   const [videos, setVideos] = useState([]);
+  const [rulesSummary, setRulesSummary] = useState([]);
 
   useEffect(() => {
+    // Top 10 rankings
+    fetch(`${apiBase}/api/matches/rankings/all`)
+      .then(r => r.json())
+      .then(data => {
+        if (data?.ok) {
+          setLeaderboard(data.rankings.slice(0, 5));
+        }
+      })
+      .catch(console.error);
+
+    // Latest News for Ribbon
+    fetch(`${apiBase}/api/news/all`)
+      .then(r => r.json())
+      .then(data => {
+        if (data?.ok) setNewsItems((data.news || []).slice(0, 5));
+      })
+      .catch(console.error);
+
+    // Other dashboard content
     fetch(`${apiBase}/api/admin/dashboard`)
       .then(r => r.json())
       .then(data => {
         if (data?.ok && data.data) {
           const conf = data.data;
           if (conf.heroSlides?.length) setHeroSlides(conf.heroSlides);
-          if (conf.leaderboard?.length) setLeaderboard(conf.leaderboard);
           if (conf.liveMatches?.length) setLiveMatches(conf.liveMatches);
           if (conf.upcomingMatches?.length) setUpcomingMatches(conf.upcomingMatches);
           if (conf.media) {
-            if (conf.media.newsItems?.length) setNewsItems(conf.media.newsItems);
             if (conf.media.photos?.length) setPhotos(conf.media.photos);
             if (conf.media.videos?.length) setVideos(conf.media.videos);
           }
+          if (conf.rulesSummary?.length) setRulesSummary(conf.rulesSummary);
         }
       })
       .catch(console.error);
@@ -66,9 +89,9 @@ export default function Dashboard() {
 
 
       {/* HERO (full width) */}
-      <section 
-        className="hero" 
-        onMouseEnter={() => setIsHoveringHero(true)} 
+      <section
+        className="hero"
+        onMouseEnter={() => setIsHoveringHero(true)}
         onMouseLeave={() => setIsHoveringHero(false)}
       >
         <div
@@ -95,6 +118,26 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* NEWS RIBBON (Thin slide under hero) */}
+      <div className="news-ribbon">
+        <div className="ribbon-label">LATEST UPDATES</div>
+        <div className="ribbon-content">
+          <div className="ribbon-track">
+            {newsItems.length > 0 ? newsItems.map((n, i) => (
+              <span key={i} className="ribbon-item">
+                <span className="dot">•</span>
+                <strong>{n.title}:</strong> {n.content}
+              </span>
+            )) : (
+              <span className="ribbon-item">Welcome to the Golf Platform! Stay tuned for more updates.</span>
+            )}
+          </div>
+        </div>
+        <button className="ribbon-btn" onClick={() => navigate("/news")}>
+          See More <i className="material-icons">arrow_forward</i>
+        </button>
+      </div>
+
       {/* MAIN GRID */}
       <main className="mainGrid">
         {/* LEFT: Leaderboard */}
@@ -102,17 +145,25 @@ export default function Dashboard() {
           <div className="card sticky">
             <div className="cardHead">
               <h3>Top Leaderboard</h3>
-              <span className="badge">Today</span>
+              <span className="badge">Global</span>
             </div>
 
             <div className="leaderList">
-              {leaderboard.map((p, idx) => (
+              {leaderboard.length > 0 ? leaderboard.map((p, idx) => (
                 <div className="leaderRow" key={idx}>
                   <div className="rank">{idx + 1}</div>
-                  <div className="pname">{p.name}</div>
-                  <div className="pscore">{p.score}</div>
+                  <div className="pname">
+                    <Link to={`/profile/${p._id || p.id}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                      {p.playerName || p.name || "Player"}
+                    </Link>
+                  </div>
+                  <div className="pscore">{p.points || 0} pts</div>
                 </div>
-              ))}
+              )) : (
+                <div className="emptyState" style={{ textAlign: "center", padding: "20px", opacity: 0.6 }}>
+                  No players ranked yet
+                </div>
+              )}
             </div>
 
             <button className="ghostBtn leaderboardBtn">View Full Leaderboard</button>
@@ -212,90 +263,6 @@ export default function Dashboard() {
       </main>
 
 
-      {/* NEWS + PHOTOS + VIDEOS (Below Highlights) */}
-      <div className="mediaSection">
-        <div className="mediaHead">
-          <h2>Updates</h2>
-          <button className="mediaMoreBtn">More →</button>
-        </div>
-
-        <div className="mediaGrid">
-          {/* NEWS */}
-          <div className="mediaCard">
-            <div className="mediaCardHead">
-              <h3>News</h3>
-              <button className="linkBtn">View all</button>
-            </div>
-
-            <div className="newsCards">
-              {newsItems.map((n, i) => (
-                <button className="newsCard" key={i}>
-                  <div
-                    className="newsImg"
-                    style={{ backgroundImage: `url(${n.img})` }}
-                  />
-                  <div className="newsText">
-                    <div className="newsTitle">{n.title}</div>
-                    <div className="newsMeta">{n.meta}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            {/* Add new item button (UI only) */}
-            <button className="addBtn">+ Add News</button>
-          </div>
-
-          {/* PHOTOS */}
-          <div className="mediaCard">
-            <div className="mediaCardHead">
-              <h3>Photos</h3>
-              <button className="linkBtn">View all</button>
-            </div>
-
-            <div className="photoGrid">
-              {photos.map((src, i) => (
-                <button
-                  className="photoItem"
-                  key={i}
-                  style={{ backgroundImage: `url(${src})` }}
-                  aria-label={`Open photo ${i + 1}`}
-                />
-              ))}
-            </div>
-
-            <button className="addBtn">+ Add Photo</button>
-          </div>
-
-          {/* VIDEOS */}
-          <div className="mediaCard">
-            <div className="mediaCardHead">
-              <h3>Videos</h3>
-              <button className="linkBtn">View all</button>
-            </div>
-
-            <div className="videoCards">
-              {videos.map((v, i) => (
-                <button className="videoCard" key={i}>
-                  <div
-                    className="videoThumb"
-                    style={{ backgroundImage: `url(${v.img})` }}
-                  >
-                    <span className="videoDur">{v.dur}</span>
-                  </div>
-
-                  <div className="videoText">
-                    <div className="videoTitle">{v.title}</div>
-                    <div className="videoMeta">{v.meta}</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-
-            <button className="addBtn">+ Add Video</button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

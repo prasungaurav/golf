@@ -75,7 +75,9 @@ export default function Match({
   // ✅ Collapsible sections (hide upcoming/finished by default)
   const [collapsed, setCollapsed] = useState({ live: false, upcoming: true, finished: true });
 
-  const [edit, setEdit] = useState({ home: "", away: "", hole: "", status: "" });
+  const [edit, setEdit] = useState({ home: "", away: "", hole: "", status: "", holeScores: [] });
+  const [approvedPlayers, setApprovedPlayers] = useState([]);
+  const [showAddPlayerModal, setShowAddPlayerModal] = useState({ show: false, team: "" });
   const abortRef = useRef({ alive: true });
 
   // ✅ Auto Live Check (every 10s)
@@ -130,6 +132,37 @@ export default function Match({
     const p = setInterval(loadList, 5000);
     return () => clearInterval(p);
   }, [tournament?._id]);
+
+  const fetchApproved = async () => {
+    if (!tournament?._id) return;
+    try {
+      const data = await api(`/api/tournaments/me/${tournament._id}/registrations?status=approved`);
+      setApprovedPlayers(data?.registrations || []);
+    } catch (e) {
+      console.error("Failed to fetch approved players", e);
+    }
+  };
+
+  useEffect(() => {
+    if (mode !== "pip") fetchApproved();
+  }, [tournament?._id]);
+
+  const onAddPlayer = async (pId) => {
+    if (!selectedMatchId || !showAddPlayerModal.team) return;
+    try {
+      setSaving(true);
+      await api(`/api/matches/${selectedMatchId}/players`, {
+        method: "POST",
+        body: JSON.stringify({ playerId: pId, team: showAddPlayerModal.team }),
+      });
+      setShowAddPlayerModal({ show: false, team: "" });
+      loadList(); // refresh list
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   // ✅ Debounced Auto-Save
   useEffect(() => {
@@ -472,7 +505,55 @@ export default function Match({
         .vs { font-size: 0.7rem; font-style: italic; opacity: 0.5; margin: 0 4px; }
         .matchSectionHead { cursor: pointer; user-select: none; transition: opacity 0.2s; }
         .matchSectionHead:hover { opacity: 0.8; }
+        .add-player-btn {
+          font-size: 0.65rem;
+          padding: 4px 8px;
+          background: var(--primary_container);
+          color: var(--on_primary_container);
+          border-radius: 4px; border: none; cursor: pointer; margin-top: 4px;
+        }
+        .add-player-btn:hover { background: var(--primary); color: white; }
+        .modal-overlay {
+          position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 9999;
+        }
+        .modal-content {
+          background: white; padding: 20px; border-radius: 12px;
+          width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; color: black;
+        }
+        .player-item {
+          padding: 10px; border-bottom: 1px solid #eee; display: flex;
+          justify-content: space-between; align-items: center;
+        }
+        .player-item:last-child { border: none; }
       `}</style>
+
+      {showAddPlayerModal.show && (
+        <div className="modal-overlay" onClick={() => setShowAddPlayerModal({ show: false, team: "" })}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <h4 style={{ margin: '0 0 10px 0' }}>Add Player to {showAddPlayerModal.team === "teamA" ? "Side A" : "Side B"}</h4>
+            <p className="tiny muted">Only approved players from this tournament are shown.</p>
+            <div style={{ marginTop: 15 }}>
+              {approvedPlayers.filter(ap => {
+                const inMatch = selectedMatch?.teamA?.some(p => p._id === ap.playerId?._id) ||
+                  selectedMatch?.teamB?.some(p => p._id === ap.playerId?._id);
+                return !inMatch;
+              }).map(ap => (
+                <div key={ap._id} className="player-item">
+                  <div>
+                    <div style={{ fontWeight: 600 }}>{ap.playerId?.playerName}</div>
+                    <div className="tiny muted">Handicap: {ap.playerId?.handicap ?? "N/A"}</div>
+                  </div>
+                  <button className="btn primary sm" onClick={() => onAddPlayer(ap.playerId?._id)}>Add</button>
+                </div>
+              ))}
+              {approvedPlayers.length === 0 && <div className="muted">No approved players found.</div>}
+            </div>
+            <button className="btn ghost block" style={{ marginTop: 20, width: '100%' }} onClick={() => setShowAddPlayerModal({ show: false, team: "" })}>Cancel</button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="cardHeadRow" style={{ padding: 0, marginBottom: 12 }}>
         <div>
@@ -584,13 +665,19 @@ export default function Match({
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', gap: 15, margin: '10px 0' }}>
                     <div style={{ textAlign: 'right' }}>
-                       <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{selectedMatch.teamAName || "Side A"}</div>
-                       <div className="tiny muted">{selectedMatch.teamA?.map(p => p.name).join(", ")}</div>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{selectedMatch.teamAName || "Side A"}</div>
+                      <div className="tiny muted">{selectedMatch.teamA?.map(p => p.name).join(", ")}</div>
+                      {selectedMatch.teamA?.length < (tournament?.registration?.teamSize || 1) && (
+                        <button className="add-player-btn" onClick={() => setShowAddPlayerModal({ show: true, team: "teamA" })}>+ Add Player</button>
+                      )}
                     </div>
                     <div className="vs" style={{ fontSize: '1.5rem', fontWeight: 300 }}>VS</div>
                     <div style={{ textAlign: 'left' }}>
-                       <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{selectedMatch.teamBName || "Side B"}</div>
-                       <div className="tiny muted">{selectedMatch.teamB?.map(p => p.name).join(", ")}</div>
+                      <div style={{ fontSize: '1.2rem', fontWeight: 800 }}>{selectedMatch.teamBName || "Side B"}</div>
+                      <div className="tiny muted">{selectedMatch.teamB?.map(p => p.name).join(", ")}</div>
+                      {selectedMatch.teamB?.length < (tournament?.registration?.teamSize || 1) && (
+                        <button className="add-player-btn" onClick={() => setShowAddPlayerModal({ show: true, team: "teamB" })}>+ Add Player</button>
+                      )}
                     </div>
                   </div>
                   <div className="muted" style={{ fontSize: '0.75rem', fontStyle: 'italic' }}>

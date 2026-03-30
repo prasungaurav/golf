@@ -48,7 +48,8 @@ const SiteConfigSchema = new mongoose.Schema({
     newsItems: [NewsSchema],
     photos: [String],
     videos: [VideoSchema]
-  }
+  },
+  rulesSummary: [String]
 });
 
 module.exports = mongoose.model("SiteConfig", SiteConfigSchema);

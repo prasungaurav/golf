@@ -26,6 +26,11 @@ const UserSchema = new mongoose.Schema(
     
     // ✅ status
     status: { type: String, enum: ["active", "blocked"], default: "active", index: true },
+
+    // ✅ stats
+    wins: { type: Number, default: 0 },
+    losses: { type: Number, default: 0 },
+    draws: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

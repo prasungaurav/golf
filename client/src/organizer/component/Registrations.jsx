@@ -65,7 +65,6 @@ export default function Registrations({ tournament }) {
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("All"); // All/Pending/Approved/Waitlist/Rejected/Blocked
   const [onlyPaid, setOnlyPaid] = useState(false);
-  const [viewMode, setViewMode] = useState("teams"); // 'teams' or 'players'
   const [groupedRows, setGroupedRows] = useState([]);
 
   // optional: manual add modal (frontend only)
@@ -126,32 +125,6 @@ export default function Registrations({ tournament }) {
     return c;
   }, [rows]);
 
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return rows
-      .filter((r) => {
-        const st = String(r.status || "").toLowerCase();
-        if (status === "All") return st !== "blocked";
-        return st === String(status).toLowerCase();
-      })
-      .filter((r) => (onlyPaid ? !!r.paid : true))
-      .filter((r) => {
-        if (!q) return true;
-        const p = r.player || {};
-        const s = `${p.name || ""} ${p.email || ""} ${p.phone || ""} ${p.city || ""} ${r.teamName || ""}`.toLowerCase();
-        return s.includes(q);
-      })
-      .sort((a, b) => {
-        // Group by teamName first, then by createdAt
-        if (a.teamName && b.teamName && a.teamName === b.teamName) {
-          return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-        }
-        if (a.teamName && b.teamName) return a.teamName.localeCompare(b.teamName);
-        if (a.teamName) return -1;
-        if (b.teamName) return 1;
-        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-      });
-  }, [rows, query, status, onlyPaid]);
 
   const optimisticUpdate = (rid, patch) => {
     setRows((prev) => {
@@ -333,20 +306,7 @@ export default function Registrations({ tournament }) {
       {/* Controls */}
       <div className="regTop" style={{ flexDirection: 'column', gap: 15, alignItems: 'flex-start' }}>
         <div style={{ display: 'flex', gap: 10, width: '100%' }}>
-          <button
-            className={`btn ${viewMode === 'teams' ? 'primary' : 'ghost'}`}
-            type="button"
-            onClick={() => setViewMode('teams')}
-          >
-            Team View ({groupedRows.length})
-          </button>
-          <button
-            className={`btn ${viewMode === 'players' ? 'primary' : 'ghost'}`}
-            type="button"
-            onClick={() => setViewMode('players')}
-          >
-            Player View ({rows.length})
-          </button>
+          <div style={{ fontWeight: 600, fontSize: '1rem' }}>Team Registrations ({groupedRows.length})</div>
           <div style={{ flex: 1 }} />
           <button className="btn primary" type="button" onClick={() => setOpenAdd(true)}>
              + Add Player
@@ -384,197 +344,83 @@ export default function Registrations({ tournament }) {
       <div className="regTableWrap">
         <table className="regTable">
           <thead>
-            {viewMode === 'teams' ? (
-              <tr>
-                <th>Team Name</th>
-                <th>Members</th>
-                <th>Status</th>
-                <th>Overall Paid</th>
-                <th>Applied</th>
-                <th style={{ width: 150 }}>Actions</th>
-              </tr>
-            ) : (
-              <tr>
-                <th>Player</th>
-                <th>Handicap</th>
-                <th>Status</th>
-                <th>Paid</th>
-                <th>Note</th>
-                <th>Applied</th>
-                <th style={{ width: 280 }}>Actions</th>
-              </tr>
-            )}
+            <tr>
+              <th>Team Name</th>
+              <th>Members</th>
+              <th>Status</th>
+              <th>Overall Paid</th>
+              <th>Applied</th>
+              <th style={{ width: 150 }}>Actions</th>
+            </tr>
           </thead>
 
           <tbody>
             {loading && (
               <tr>
-                <td colSpan={7}>
+                <td colSpan={6}>
                   <div className="empty">Loading registrations...</div>
                 </td>
               </tr>
             )}
 
-            {!loading && viewMode === 'teams' &&
-              filteredTeams.map((g) => {
-                const isPaidAll = g.members.every(m => m.paid);
-                return (
-                  <tr key={g.groupId} className="teamRow">
-                    <td style={{ verticalAlign: 'top' }}>
-                      <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem' }}>{g.teamName}</div>
-                      <div className="tiny muted">{g.groupId}</div>
-                    </td>
-                    <td>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {g.members.map((m, idx) => (
-                          <div key={m._id} style={{
-                            padding: '6px 10px',
-                            background: 'var(--surface_container_low)',
-                            borderRadius: 6,
-                            fontSize: '0.85rem',
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center'
-                          }}>
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <strong>{m.player?.name}</strong>
-                                <span className={`tiny pill ${m.isLeader ? 'pill-ok' : ''}`} style={{ fontSize: '0.6rem', padding: '1px 5px' }}>
-                                  {m.isLeader ? 'LEADER' : 'PLAYER'}
-                                </span>
-                              </div>
-                              <div className="tiny muted">{m.player?.email} • HCP: {m.player?.handicap ?? "—"}</div>
+            {!loading && filteredTeams.map((g) => {
+              const isPaidAll = g.members.every(m => m.paid);
+              return (
+                <tr key={g.groupId} className="teamRow">
+                  <td style={{ verticalAlign: 'top' }}>
+                    <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.9rem' }}>{g.teamName}</div>
+                    <div className="tiny muted">{g.groupId}</div>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      {g.members.map((m, idx) => (
+                        <div key={m._id} style={{
+                          padding: '6px 10px',
+                          background: 'var(--surface_container_low)',
+                          borderRadius: 6,
+                          fontSize: '0.85rem',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center'
+                        }}>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <strong>{m.player?.name}</strong>
+                              <span className={`tiny pill ${m.isLeader ? 'pill-ok' : ''}`} style={{ fontSize: '0.6rem', padding: '1px 5px' }}>
+                                {m.isLeader ? 'LEADER' : 'PLAYER'}
+                              </span>
                             </div>
-                            <div style={{ display: 'flex', gap: 5 }}>
-                              <span className={`tiny pill ${m.paid ? 'pill-ok' : 'pill-bad'}`}>{m.paid ? 'Paid' : 'Unpaid'}</span>
-                            </div>
+                            <div className="tiny muted">{m.player?.email} • HCP: {m.player?.handicap ?? "—"}</div>
                           </div>
-                        ))}
-
-                        {(() => {
-                          const leader = g.members.find(m => m.isLeader);
-                          if (!leader || !leader.partners) return null;
-
-                          // Find partners who don't have a corresponding entry in g.members
-                          const virtualPartners = leader.partners.filter(p =>
-                            !g.members.some(m => String(m.player?._id) === String(p._id))
-                          );
-
-                          return virtualPartners.map(vp => (
-                            <div key={vp._id} style={{
-                              padding: '6px 10px',
-                              background: 'var(--surface_container_low)',
-                              borderRadius: 6,
-                              fontSize: '0.85rem',
-                              opacity: 0.7,
-                              border: '1px dashed var(--outline_variant)',
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center'
-                            }}>
-                              <div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                  <strong>{vp.name}</strong>
-                                  <span className="tiny pill" style={{ fontSize: '0.6rem', padding: '1px 5px', background: 'var(--secondary_container)', color: 'var(--on_secondary_container)' }}>
-                                    Player
-                                  </span>
-                                </div>
-                                <div className="tiny muted">{vp.email} • HCP: {vp.handicap}</div>
-                              </div>
-                            </div>
-                          ));
-                        })()}
-                      </div>
-                    </td>
-                    <td><Pill status={g.status} /></td>
-                    <td>
-                      <button className={`miniBtn ${isPaidAll ? "ok" : ""}`} type="button" onClick={() => togglePaid(g.members[0]._id)}>
-                        {isPaidAll ? "All Paid" : "Mark Team Paid"}
-                      </button>
-                    </td>
-                    <td className="regMono">{fmt(g.members[0].createdAt)}</td>
-                    <td>
-                      <div className="regActions">
-                        <button className="miniBtn ok" type="button" onClick={() => setRowStatus(g.members[0]._id, "approved")}>Approve</button>
-                        <button className="miniBtn" type="button" onClick={() => setRowStatus(g.members[0]._id, "waitlist")}>Waitlist</button>
-                        <button className="miniBtn dangerOutline" type="button" onClick={() => setRowStatus(g.members[0]._id, "rejected")}>Reject</button>
-                        <button className="miniBtn danger" type="button" onClick={() => setRowStatus(g.members[0]._id, "blocked")}>Block</button>
-                        <button className="miniBtn" type="button" onClick={() => removeRowLocal(g.members[0]._id)}>Remove</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            }
-
-            {!loading && viewMode === 'players' &&
-              filtered.map((r) => {
-                const p = r.player || {};
-                const st = String(r.status || "").toLowerCase();
-                return (
-                  <tr key={r._id} className={r.teamName ? "teamRow" : ""}>
-                    <td>
-                      <div className="regPlayer">
-                        {r.teamName && (
-                          <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: 1 }}>TEAM: {r.teamName}</div>
-                        )}
-                        <div className="regName" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span>{p.name || "—"}</span>
-                          {r.registrationGroupId && (
-                            <span className={`tiny pill ${r.isLeader ? 'pill-ok' : ''}`} style={{ fontSize: '0.65rem', padding: '1px 5px', textTransform: 'uppercase' }}>
-                              {r.isLeader ? 'Leader' : 'Player'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="regSub muted">
-                          {p.email || "—"} • {p.phone || "—"} • {p.city || "—"}
-                        </div>
-                        {r.registrationGroupId && (
-                          <div className="tiny muted" style={{ marginTop: 4, fontStyle: 'italic' }}>
-                            Teammates: {(() => {
-                              const team = filteredTeams.find(t => t.groupId === r.registrationGroupId);
-                              if (!team) return "None / Other";
-                              const others = team.members.filter(m => String(m._id) !== String(r._id)).map(m => m.player?.name);
-                              return others.length > 0 ? others.join(", ") : "Solo";
-                            })()}
+                          <div style={{ display: 'flex', gap: 5 }}>
+                            <span className={`tiny pill ${m.paid ? 'pill-ok' : 'pill-bad'}`}>{m.paid ? 'Paid' : 'Unpaid'}</span>
                           </div>
-                        )}
-                      </div>
-                    </td>
+                        </div>
+                      ))}
+                    </div>
+                  </td>
+                  <td><Pill status={g.status} /></td>
+                  <td>
+                    <button className={`miniBtn ${isPaidAll ? "ok" : ""}`} type="button" onClick={() => togglePaid(g.members[0]._id)}>
+                      {isPaidAll ? "All Paid" : "Mark Team Paid"}
+                    </button>
+                  </td>
+                  <td className="regMono">{fmt(g.members[0].createdAt)}</td>
+                  <td>
+                    <div className="regActions">
+                      <button className="miniBtn ok" type="button" onClick={() => setRowStatus(g.members[0]._id, "approved")}>Approve</button>
+                      <button className="miniBtn dangerOutline" type="button" onClick={() => setRowStatus(g.members[0]._id, "rejected")}>Reject</button>
+                      <button className="miniBtn" type="button" onClick={() => removeRowLocal(g.members[0]._id)}>Remove</button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
 
-                    <td className="regMono">{p.handicap ?? "—"}</td>
-
-                    <td>
-                      <Pill status={r.status} />
-                    </td>
-
-                    <td>
-                      <button className={`miniBtn ${r.paid ? "ok" : ""}`} type="button" onClick={() => togglePaid(r._id)}>
-                        {r.paid ? "Paid" : "Unpaid"}
-                      </button>
-                    </td>
-
-                    <td className="regNote">{r.notes || "—"}</td>
-
-                    <td className="regMono">{fmt(r.createdAt)}</td>
-
-                    <td>
-                      <div className="regActions">
-                        <button className="miniBtn ok" type="button" onClick={() => setRowStatus(r._id, "approved")}>Approve</button>
-                        <button className="miniBtn" type="button" onClick={() => setRowStatus(r._id, "waitlist")}>Waitlist</button>
-                        <button className="miniBtn dangerOutline" type="button" onClick={() => setRowStatus(r._id, "rejected")}>Reject</button>
-                        <button className="miniBtn danger" type="button" onClick={() => setRowStatus(r._id, "blocked")}>Block</button>
-                        <button className="miniBtn" type="button" onClick={() => removeRowLocal(r._id)}>Remove</button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-
-            {!loading && (viewMode === 'players' ? filtered : filteredTeams).length === 0 && (
+            {!loading && filteredTeams.length === 0 && (
               <tr>
-                <td colSpan={7}>
-                  <div className="empty">No registrations found.</div>
+                <td colSpan={6}>
+                  <div className="empty">No team registrations found.</div>
                 </td>
               </tr>
             )}

@@ -4,6 +4,8 @@ const SiteConfig = require("../models/SiteConfig");
 const Match = require("../models/Match");
 const Tournament = require("../models/Tournament");
 const User = require("../models/User");
+const TournamentPlayer = require("../models/TournamentPlayer");
+const { handlePlayerRemoval } = require("../utils/tournament.utils");
 const SponsorBid = require("../models/SponsorBid");
 const { requireRole } = require("../middleware/sessionAuth");
 
@@ -48,7 +50,7 @@ router.get("/dashboard", async (req, res) => {
 /**
  * @route   POST /api/admin/dashboard
  */
-router.post("/dashboard", requireRole("admin"), async (req, res) => {
+router.post("/dashboard", requireRole("admin", "organiser"), async (req, res) => {
   try {
     const payload = req.body;
     let config = await SiteConfig.findOne({ singleton_id: "GLOBAL" });
@@ -64,6 +66,7 @@ router.post("/dashboard", requireRole("admin"), async (req, res) => {
         videos: payload.media.videos || []
       };
     }
+    config.rulesSummary = payload.rulesSummary || [];
     await config.save();
     res.json({ ok: true, data: config });
   } catch (err) {
@@ -113,6 +116,14 @@ router.patch("/users/:id/status", requireRole("admin"), async (req, res) => {
     }
     user.status = status;
     await user.save();
+
+    // ✅ If blocked, remove from all tournament teams
+    if (status === "blocked") {
+      const registrations = await TournamentPlayer.find({ playerId: id, status: { $ne: "blocked" } });
+      for (const reg of registrations) {
+        await handlePlayerRemoval(id, reg.tournamentId, "User Blocked by Admin");
+      }
+    }
     res.json({ ok: true, message: `User is now ${status}`, user });
   } catch (err) {
     res.status(500).json({ ok: false, message: "Update failed" });
