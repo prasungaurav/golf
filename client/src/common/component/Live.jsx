@@ -70,7 +70,6 @@ export default function Live() {
       };
 
       const isMatchPlay = String(m.format || "").toLowerCase().includes("match");
-      const isStableford = String(m.format || "").toLowerCase().includes("stableford");
 
       let pA_display = m.scoreA ?? "-";
       let pB_display = m.scoreB ?? "-";

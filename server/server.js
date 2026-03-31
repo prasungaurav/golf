@@ -55,9 +55,11 @@ app.use("/api/tournaments", tournamentRoutes);
 app.use("/api/sponsor", sponsorBidRoutes);
 app.use("/api/organiser", organiserSponsorRoutes);
 
-const adminRoutes = require("./routes/admin");
+const adminRouter = require("./routes/admin");
+const configRouter = require("./routes/config");
 
-app.use("/api/admin", adminRoutes);
+app.use("/api/admin", adminRouter);
+app.use("/api/config", configRouter);
 app.use("/api/matches", require("./routes/match"));
 app.use("/api/friends", require("./routes/friends"));
 app.use("/api/notifications", require("./routes/notifications"));

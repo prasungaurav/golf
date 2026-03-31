@@ -70,7 +70,6 @@ export default function Tournament() {
   const [tab, setTab] = useState("overview");
   const [fieldQuery, setFieldQuery] = useState("");
   const [selectedExtras, setSelectedExtras] = useState({});
-  const [regStatus, setRegStatus] = useState("open"); // demo only (kept)
 
   // ✅ LOCK STATE
   const [isLocked, setIsLocked] = useState(false);
@@ -134,7 +133,7 @@ export default function Tournament() {
   // ----------------------------
   // LOAD LIST (Init)
   // ----------------------------
-  const loadList = async () => {
+  const loadList = React.useCallback(async () => {
     setErr("");
     try {
       const data = await api("/api/tournaments", { method: "GET" });
@@ -153,7 +152,7 @@ export default function Tournament() {
     } catch (e) {
       setErr(e.message);
     }
-  };
+  }, [tournamentId]);
 
 
   // ----------------------------
@@ -170,14 +169,22 @@ export default function Tournament() {
       setTeeTimes(Array.isArray(data.teeTimes) ? data.teeTimes : []);
       setLeaderboard(Array.isArray(data.leaderboard) ? data.leaderboard : []);
       setUpdates(Array.isArray(data.updates) ? data.updates : []);
-
-      setSelectedExtras({});
     } catch (e) {
       setErr(e.message);
     } finally {
       setLoading(false);
     }
   };
+  const regStatus = useMemo(() => {
+    if (!tournament) return "closed";
+    const now = new Date();
+    const closes = new Date(tournament.registration?.regClosesAt);
+    if (closes < now) return "closed";
+    if (tournament.registration?.maxPlayers > 0 && (tournament.registration?.currentPlayers || 0) >= tournament.registration?.maxPlayers) {
+      return tournament.registration?.waitlistEnabled ? "waitlist" : "closed";
+    }
+    return "open";
+  }, [tournament]);
 
   // INIT
   useEffect(() => {
@@ -186,7 +193,7 @@ export default function Tournament() {
       await loadList();
       setLoading(false);
     })();
-  }, []);
+  }, [loadList]);
 
   // when tournamentId changes (explicit user action)
   useEffect(() => {
@@ -338,8 +345,6 @@ export default function Tournament() {
   }, [selectedExtras, t]);
 
   const totalPay = (t?.registration?.fee || 0) + extrasTotal;
-
-  const statusPill = null;
 
   const closeInDays = daysLeft(t?.regClosesAt);
 
@@ -720,7 +725,6 @@ export default function Tournament() {
             const closes = x?.registration?.regClosesAt || x.regClosesAt;
             const d = daysLeft(closes);
 
-            const st = String(x.status || "").toLowerCase();
             const badge = (d != null && d <= 3 && d > 0) ? "CLOSING SOON" : "OPEN";
 
             const xid = x._id || x.id;

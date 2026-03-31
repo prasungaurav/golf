@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import "../../common/style/Dashboard.css"; // Reuse some card styles
+import "../style/Admin.css";
 
 export default function NewsManage() {
   const [news, setNews] = useState([]);
@@ -48,7 +48,7 @@ export default function NewsManage() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure?")) return;
+    if (!window.confirm("Confirm deletion of this narrative?")) return;
     try {
       const res = await fetch(`${apiBase}/api/news/${id}`, { method: "DELETE", credentials: "include" });
       const data = await res.json();
@@ -67,118 +67,128 @@ export default function NewsManage() {
       image: item.image,
       status: item.status
     });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <div className="dash" style={{ padding: 40 }}>
-      <div className="card" style={{ maxWidth: 800, margin: "0 auto" }}>
-        <div className="cardHead">
-          <h3>{editing ? "Edit News" : "Create News"}</h3>
-          <div style={{ display: "flex", gap: 10 }}>
-            <button 
-              className="ghostBtn" 
-              style={{ width: "auto", border: "1px solid var(--primary)", color: "var(--primary)" }} 
-              onClick={async () => {
-                if(!window.confirm("This will import missing updates from tournaments. Proceed?")) return;
+    <div className="admin-view">
+      <header className="admin-header">
+        <div className="admin-title">
+          <h1>News & Media Feed</h1>
+          <p>Broadcast updates, tournament results, and lifestyle content</p>
+        </div>
+        <div className="admin-actions">
+           <button 
+             className="admin-btn-outline" 
+             onClick={async () => {
+                if(!window.confirm("Sync system updates from tournament events?")) return;
                 const res = await fetch(`${apiBase}/api/news/sync-updates`, { method: "POST", credentials: "include" });
                 const data = await res.json();
                 alert(data.ok ? data.message : "Sync failed");
                 if(data.ok) fetchNews();
-              }}
-            >
-              🔄 Sync Updates
-            </button>
-            <button className="ghostBtn" style={{ width: "auto" }} onClick={() => { setEditing(null); setFormData({ title: "", content: "", category: "Update", image: "", status: "published" }); }}>
-              Clear
-            </button>
-          </div>
+             }}
+           >
+             🔄 Sync Events
+           </button>
         </div>
+      </header>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 15 }}>
-          <input 
-            className="inputField" 
-            placeholder="Title" 
-            value={formData.title} 
-            onChange={e => setFormData({ ...formData, title: e.target.value })} 
-            required 
-            style={{ padding: 12, borderRadius: 8, border: "1px solid var(--outline_variant)" }}
-          />
-          <textarea 
-            className="inputField" 
-            placeholder="Content" 
-            rows={5} 
-            value={formData.content} 
-            onChange={e => setFormData({ ...formData, content: e.target.value })} 
-            required 
-            style={{ padding: 12, borderRadius: 8, border: "1px solid var(--outline_variant)", fontFamily: "inherit" }}
-          />
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 15 }}>
-            <select 
-              className="inputField" 
-              value={formData.category} 
-              onChange={e => setFormData({ ...formData, category: e.target.value })}
-              style={{ padding: 12, borderRadius: 8, border: "1px solid var(--outline_variant)" }}
-            >
-              <option value="Update">Update</option>
-              <option value="Tournament">Tournament</option>
-              <option value="Tournament Update">Tournament Update</option>
-              <option value="Match Result">Match Result</option>
-              <option value="Rules">Rules</option>
-              <option value="Lifestyle">Lifestyle</option>
-              <option value="Pro Tips">Pro Tips</option>
-            </select>
-            <select 
-              className="inputField" 
-              value={formData.status} 
-              onChange={e => setFormData({ ...formData, status: e.target.value })}
-              style={{ padding: 12, borderRadius: 8, border: "1px solid var(--outline_variant)" }}
-            >
-              <option value="published">Published</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
-          <input 
-            className="inputField" 
-            placeholder="Image URL (optional)" 
-            value={formData.image} 
-            onChange={e => setFormData({ ...formData, image: e.target.value })} 
-            style={{ padding: 12, borderRadius: 8, border: "1px solid var(--outline_variant)" }}
-          />
-          <button className="primaryBtn" type="submit" style={{ width: "100%" }}>
-            {editing ? "Save Changes" : "Create Post"}
-          </button>
-        </form>
-      </div>
-
-      <div className="card" style={{ maxWidth: 800, margin: "40px auto 0" }}>
-        <div className="cardHead">
-          <h3>Manage News</h3>
-          <span className="badge">{news.length} Items</span>
-        </div>
-
-        <div className="news-list" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {loading ? (
-            <p>Loading...</p>
-          ) : news.map(item => (
-            <div key={item._id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 15, background: "var(--surface_container_high)", borderRadius: 12 }}>
-              <div>
-                <div style={{ fontWeight: 700 }}>{item.title}</div>
-                <div style={{ fontSize: "0.8rem", color: "var(--on_surface_variant)" }}>
-                  {item.category} • {item.status} • {item.isAutoGenerated ? "🤖 Auto" : "👤 Manual"}
-                  {item.tournamentId && (
-                    <div style={{ color: "var(--primary)", fontWeight: 600, marginTop: 2 }}>
-                      Tournament: {item.tournamentId.title || "Unknown"}
-                    </div>
+      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px'}}>
+         {/* FORM */}
+         <section className="admin-card">
+            <h3>{editing ? "Edit Narrative" : "Compose New Post"}</h3>
+            <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 20 }}>
+               <input 
+                 className="admin-input" 
+                 placeholder="Headline Title" 
+                 value={formData.title} 
+                 onChange={e => setFormData({ ...formData, title: e.target.value })} 
+                 required 
+               />
+               <textarea 
+                 className="admin-input" 
+                 placeholder="Broadcast Content" 
+                 rows={8} 
+                 value={formData.content} 
+                 onChange={e => setFormData({ ...formData, content: e.target.value })} 
+                 required 
+               />
+               <div className="admin-grid-2">
+                  <div>
+                    <label className="stat-label">Sector</label>
+                    <select 
+                      className="admin-input" 
+                      value={formData.category} 
+                      onChange={e => setFormData({ ...formData, category: e.target.value })}
+                    >
+                      <option value="Update">General Update</option>
+                      <option value="Tournament">Tournament Official</option>
+                      <option value="Match Result">Score Update</option>
+                      <option value="Rules">Regulation</option>
+                      <option value="Lifestyle">Lifestyle</option>
+                      <option value="Pro Tips">Performance Tips</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="stat-label">Visibility</label>
+                    <select 
+                      className="admin-input" 
+                      value={formData.status} 
+                      onChange={e => setFormData({ ...formData, status: e.target.value })}
+                    >
+                      <option value="published">Published</option>
+                      <option value="pending">Draft / Hidden</option>
+                    </select>
+                  </div>
+               </div>
+               <input 
+                 className="admin-input" 
+                 placeholder="Media URL (Image source)" 
+                 value={formData.image} 
+                 onChange={e => setFormData({ ...formData, image: e.target.value })} 
+               />
+               <div style={{display: 'flex', gap: 12}}>
+                  <button className="admin-btn" type="submit" style={{flex: 1}}>
+                    {editing ? "Commit Edit" : "Publish to Feed"}
+                  </button>
+                  {editing && (
+                    <button className="admin-btn-outline" type="button" onClick={() => { setEditing(null); setFormData({ title: "", content: "", category: "Update", image: "", status: "published" }); }}>
+                      Cancel
+                    </button>
                   )}
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button className="smallBtn" onClick={() => startEdit(item)}>Edit</button>
-                <button className="smallBtn" style={{ color: "var(--error)" }} onClick={() => handleDelete(item._id)}>Delete</button>
-              </div>
+               </div>
+            </form>
+         </section>
+
+         {/* LIST */}
+         <section className="admin-card">
+            <div style={{display: 'flex', justifyContent: 'space-between', marginBottom: 20}}>
+               <h3>Live Feed Items</h3>
+               <span className="status-badge active">{news.length} Total</span>
             </div>
-          ))}
-        </div>
+            
+            <div style={{display: 'flex', flexDirection: 'column', gap: 12, maxHeight: '70vh', overflowY: 'auto', paddingRight: 8}}>
+               {loading ? (
+                 <p className="admin-text-muted">Scanning feed...</p>
+               ) : news.map(item => (
+                 <div key={item._id} className="stat-item" style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16}}>
+                    <div style={{maxWidth: '70%'}}>
+                       <div style={{fontWeight: 700, marginBottom: 4}}>{item.title}</div>
+                       <div style={{fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em'}}>
+                          <span style={{color: 'var(--admin-primary)'}}>{item.category}</span> • 
+                          <span style={{color: item.status === 'published' ? 'var(--admin-success)' : 'var(--admin-error)'}}> {item.status}</span> • 
+                          <span className="admin-text-muted"> {item.isAutoGenerated ? "🤖 AUTO" : "👤 MANUAL"}</span>
+                       </div>
+                    </div>
+                    <div style={{display: 'flex', gap: 8}}>
+                       <button className="status-badge active" style={{border: 'none', cursor: 'pointer'}} onClick={() => startEdit(item)}>EDIT</button>
+                       <button className="status-badge blocked" style={{border: 'none', cursor: 'pointer'}} onClick={() => handleDelete(item._id)}>DROP</button>
+                    </div>
+                 </div>
+               ))}
+               {news.length === 0 && <p className="admin-text-muted">The feed is currently silent.</p>}
+            </div>
+         </section>
       </div>
     </div>
   );

@@ -105,26 +105,6 @@ export default function Registrations({ tournament }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tid]);
 
-  const counts = useMemo(() => {
-    const c = {
-      All: rows.filter(r => String(r.status || "").toLowerCase() !== "blocked").length,
-      Pending: 0,
-      Approved: 0,
-      Waitlist: 0,
-      Rejected: 0,
-      Blocked: 0,
-    };
-    for (const r of rows) {
-      const st = String(r.status || "").toLowerCase();
-      if (st === "pending") c.Pending++;
-      else if (st === "approved") c.Approved++;
-      else if (st === "waitlist") c.Waitlist++;
-      else if (st === "rejected") c.Rejected++;
-      else if (st === "blocked") c.Blocked++;
-    }
-    return c;
-  }, [rows]);
-
 
   const optimisticUpdate = (rid, patch) => {
     setRows((prev) => {

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../common/component/AuthContext";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import "../../common/style/Profile.css";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
@@ -20,7 +20,7 @@ export default function PlayerProfile() {
   const [activeTab, setActiveTab] = useState("tournaments"); // tournaments, match_history, friends
   const [globalRank, setGlobalRank] = useState(null);
 
-  const fetchPlayerData = async () => {
+  const fetchPlayerData = React.useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -63,7 +63,7 @@ export default function PlayerProfile() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id, isOwnProfile, currentUser]);
 
   const handleSearch = async (q) => {
     setSearchQuery(q);
@@ -99,13 +99,13 @@ export default function PlayerProfile() {
 
   useEffect(() => {
     fetchPlayerData();
-  }, []);
+  }, [fetchPlayerData]);
 
   const stats = {
     totalMatches: items.length,
     wins: profileUser?.wins || 0,
     losses: profileUser?.losses || 0,
-    avgScore: items.filter(x => x.score).reduce((acc, x, i, arr) => acc + Number(x.score) / arr.length, 0).toFixed(1) || "—",
+    avgScore: items.filter(x => x.score).reduce((acc, x, _, arr) => acc + Number(x.score) / arr.length, 0).toFixed(1) || "—",
     bestScore: Math.min(...items.filter(x => x.score).map(x => Number(x.score))) || "—",
     ranking: globalRank ? `#${globalRank}` : "#—",
     handicap: profileUser?.handicap || "—",

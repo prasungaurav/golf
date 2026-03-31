@@ -14,7 +14,6 @@ import NotificationCenter from "./NotificationCenter";
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 export default function Navbar() {
-  const navigate = useNavigate();
 
   const {
     user,
@@ -92,11 +91,6 @@ export default function Navbar() {
             <li>
               <NavLink to="/admin/profile" className="navItem">
                 Admin Dashboard
-              </NavLink>
-            </li>
-            <li>
-              <NavLink to="/admin/users" className="navItem">
-                Users
               </NavLink>
             </li>
           </>

@@ -5,7 +5,7 @@ import "../style/Dashboard.css";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const { userRole } = useAuth();
+  useAuth();
   const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
   const [heroSlides, setHeroSlides] = useState([
@@ -16,9 +16,7 @@ export default function Dashboard() {
   const [liveMatches, setLiveMatches] = useState([]);
   const [upcomingMatches, setUpcomingMatches] = useState([]);
   const [newsItems, setNewsItems] = useState([]);
-  const [photos, setPhotos] = useState([]);
   const [videos, setVideos] = useState([]);
-  const [rulesSummary, setRulesSummary] = useState([]);
 
   useEffect(() => {
     // Top 10 rankings
@@ -40,7 +38,7 @@ export default function Dashboard() {
       .catch(console.error);
 
     // Other dashboard content
-    fetch(`${apiBase}/api/admin/dashboard`)
+    fetch(`${apiBase}/api/config`)
       .then(r => r.json())
       .then(data => {
         if (data?.ok && data.data) {
@@ -49,15 +47,14 @@ export default function Dashboard() {
           if (conf.liveMatches?.length) setLiveMatches(conf.liveMatches);
           if (conf.upcomingMatches?.length) setUpcomingMatches(conf.upcomingMatches);
           if (conf.media) {
-            if (conf.media.photos?.length) setPhotos(conf.media.photos);
             if (conf.media.videos?.length) setVideos(conf.media.videos);
           }
-          if (conf.rulesSummary?.length) setRulesSummary(conf.rulesSummary);
         }
       })
       .catch(console.error);
   }, [apiBase]);
   const [active, setActive] = useState(0);
+  const [livePage, setLivePage] = useState(0);
   const [isHoveringHero, setIsHoveringHero] = useState(false);
 
   useEffect(() => {
@@ -67,6 +64,15 @@ export default function Dashboard() {
     }, 4000);
     return () => clearInterval(id);
   }, [heroSlides.length, isHoveringHero]);
+
+  // AUTO-SLIDE for Live Matches (1-by-1 sliding window)
+  useEffect(() => {
+    if (liveMatches.length <= 2) return;
+    const id = setInterval(() => {
+      setLivePage((prev) => (prev + 1) % liveMatches.length);
+    }, 5000);
+    return () => clearInterval(id);
+  }, [liveMatches.length]);
 
   // ✅ KEYBOARD NAVIGATION
   useEffect(() => {
@@ -179,23 +185,59 @@ export default function Dashboard() {
               <span className="liveDot">LIVE</span>
             </div>
 
-            <div className="matchGrid">
-              {liveMatches.map((m, idx) => (
-                <div className="matchCard" key={idx}>
-                  <div className="matchTop">
-                    <span className="pill live">{m.status || "Live"}</span>
-                    <span className="muted">{m.hole || "Hole 1"}</span>
+            <div className="match-carousel-container">
+              <div 
+                className="match-track" 
+                style={{ 
+                  transform: `translateX(calc(-${livePage * 50}% - ${livePage * 8}px))`
+                }}
+              >
+                {liveMatches.map((m, idx) => (
+                  <div className="matchCard" key={m.matchId || idx}>
+                    <div className="matchTop">
+                      <span className="pill live">{m.status || "Live"}</span>
+                      <span className="muted">{m.hole || "Hole 1"}</span>
+                    </div>
+                    <div className="matchTitle">{m.title}</div>
+                    <div className="matchMeta">
+                      <span>Score: {m.score}</span>
+                      <span>•</span>
+                      <span>Course: {m.course}</span>
+                    </div>
+                    <button className="smallBtn">Watch / Track</button>
                   </div>
-                  <div className="matchTitle">{m.title}</div>
-                  <div className="matchMeta">
-                    <span>Score: {m.score}</span>
-                    <span>•</span>
-                    <span>Course: {m.course}</span>
-                  </div>
-                  <button className="smallBtn">Watch / Track</button>
-                </div>
-              ))}
+                ))}
+                {/* Wraparound clone for seamless loop */}
+                {liveMatches.length > 2 && (
+                   <div className="matchCard clone">
+                      <div className="matchTop">
+                        <span className="pill live">{liveMatches[0].status || "Live"}</span>
+                        <span className="muted">{liveMatches[0].hole || "Hole 1"}</span>
+                      </div>
+                      <div className="matchTitle">{liveMatches[0].title}</div>
+                      <div className="matchMeta">
+                        <span>Score: {liveMatches[0].score}</span>
+                        <span>•</span>
+                        <span>Course: {liveMatches[0].course}</span>
+                      </div>
+                      <button className="smallBtn">Watch / Track</button>
+                   </div>
+                )}
+              </div>
             </div>
+
+            {liveMatches.length > 2 && (
+              <div className="live-pagination">
+                {liveMatches.map((_, i) => (
+                  <button 
+                    key={i} 
+                    className={`pagi-dot ${i === livePage ? 'active' : ''}`} 
+                    onClick={() => setLivePage(i)}
+                    aria-label={`Go to live match start ${i + 1}`}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="center-bottom">

@@ -24,7 +24,7 @@ export default function News() {
         <h1>Latest News & Updates</h1>
         <p>Stay informed about tournaments, rules, and lifestyle updates.</p>
       </header>
-      
+
       <div className="news-grid">
         {loading ? (
           <div className="loading-news">Loading newest updates...</div>
@@ -34,15 +34,15 @@ export default function News() {
           newsList.map(item => (
             <article key={item._id} className="news-card">
               <div className="news-image-container">
-                <div 
-                   className="news-image" 
-                   style={{ backgroundImage: `url(${item.image || "/images/golf_basics.png"})` }} 
+                <div
+                  className="news-image"
+                  style={{ backgroundImage: `url(${item.image || "/images/golf_basics.png"})` }}
                 />
                 <span className={`news-category-badge cat-${(item.category || "update").toLowerCase().replace(/\s+/g, '-')}`}>
                   {item.category}
                 </span>
               </div>
-              
+
               <div className="news-content">
                 <div className="news-date">
                   <i className="material-icons text-xs">calendar_today</i>
@@ -75,7 +75,7 @@ export default function News() {
             <button className="modal-close-btn" onClick={() => setSelectedNews(null)}>
               <i className="material-icons">close</i>
             </button>
-            
+
             <div className="modal-header-image" style={{ backgroundImage: `url(${selectedNews.image || "/images/golf_basics.png"})` }}>
               <span className={`news-category-badge cat-${(selectedNews.category || "update").toLowerCase().replace(/\s+/g, '-')}`}>
                 {selectedNews.category}
@@ -92,7 +92,7 @@ export default function News() {
               </div>
               <h1>{selectedNews.title}</h1>
               <div className="news-author" style={{ color: "var(--primary)", fontWeight: 700, marginBottom: 20 }}>
-                 By {selectedNews.authorId?.organiserName || selectedNews.authorId?.playerName || selectedNews.authorId?.name || "Official"}
+                By {selectedNews.authorId?.organiserName || selectedNews.authorId?.playerName || selectedNews.authorId?.name || "Official"}
               </div>
               <div className="full-content">
                 {selectedNews.content.split('\n').map((line, i) => (

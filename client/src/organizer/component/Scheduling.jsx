@@ -24,7 +24,7 @@ function toHHMM(mins) {
   const m = mins % 60;
   return `${pad(h)}:${pad(m)}`;
 }
-function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
+
 
 function Pill({ children, kind = "muted" }) {
   return <span className={`pill pill-${kind}`}>{children}</span>;
@@ -128,10 +128,6 @@ export default function Scheduling({ tournament, onUpdate }) {
       .filter(Boolean)
       .filter((p) => (!q ? true : p.name.toLowerCase().includes(q)));
   }, [pool, players, search]);
-
-  const selectedSlot = useMemo(() => slots.find((s) => s.id === selectedSlotId) || null, [slots, selectedSlotId]);
-
-  // ✅ GENERATE: Khali dabba (slots) banana
   const generateSlots = () => {
     const start = toMin(config.start);
     const end = toMin(config.end);
@@ -226,7 +222,7 @@ export default function Scheduling({ tournament, onUpdate }) {
           })
         }))
       };
-      const data = await api(`/api/matches/tournament/me/${tid}/schedule`, {
+      await api(`/api/matches/tournament/me/${tid}/schedule`, {
         method: "POST",
         body: JSON.stringify(payload)
       });

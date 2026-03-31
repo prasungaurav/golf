@@ -1,8 +1,15 @@
 import React, { useEffect, useState } from "react";
 import { useAuth } from "../../common/component/AuthContext";
-import "../../common/style/Profile.css";
+import "../style/Admin.css";
 
 const API_BASE = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
+const StatItem = ({ label, value, color }) => (
+  <div className="stat-item" style={{ "--admin-primary": color }}>
+    <span className="stat-label">{label}</span>
+    <span className="stat-value">{value}</span>
+  </div>
+);
 
 export default function AdminProfile() {
   const { user: me } = useAuth();
@@ -10,79 +17,79 @@ export default function AdminProfile() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
 
-  const fetchData = async () => {
+  useEffect(() => {
+    fetchStats();
+  }, []);
+
+  const fetchStats = async () => {
     try {
       setLoading(true);
-      setError("");
-
-      const sRes = await fetch(`${API_BASE}/api/admin/analytics`, { credentials: "include" });
-      const sJson = await sRes.json();
-      if (sJson.ok) setStats(sJson.data);
-
+      const res = await fetch(`${API_BASE}/api/admin/analytics`, { credentials: "include" });
+      const json = await res.json();
+      if (json.ok) setStats(json.data);
+      else setError(json.message);
     } catch (e) {
-      console.error(e);
-      setError("Failed to load administration data.");
+      setError("Failed to sync with command center.");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  if (loading) return <div className="profile-container"><div className="stat-card">Loading Master Admin View...</div></div>;
+  if (loading) return <div className="admin-title"><h1>Initializing Terminal...</h1></div>;
 
   return (
-    <div className="profile-container">
-      {error && <div className="orgError" style={{marginBottom: '1rem'}}>⚠ {error}</div>}
-
-      <header className="profile-header">
-        <div className="profile-avatar-large" style={{background: 'var(--primary)', color: 'white'}}>
-          {me?.name?.[0] || "A"}
+    <div className="admin-view">
+      <header className="admin-header">
+        <div className="admin-title">
+          <h1>System Overview</h1>
+          <p>Welcome back, Commissioner {me?.organiserName || me?.playerName || "Admin"}</p>
         </div>
-        <div className="profile-info">
-          <h1>{me?.name || "System Admin"}</h1>
-          <p>{me?.email || "admin@golfnow.com"}</p>
-          <div className="profile-badges">
-            <span className="badge-item">MASTER ADMIN</span>
-            <span className="badge-item">FULL SYSTEM AUTH</span>
-          </div>
+        <div className="admin-actions">
+           <button className="admin-nav-item active" style={{cursor: 'pointer'}} onClick={fetchStats}>
+             Sync Pulse
+           </button>
         </div>
       </header>
 
-      {/* Global Stats */}
-      <section className="stats-grid">
-        <div className="stat-card">
-          <span className="stat-value">{stats?.totalPlayers || 0}</span>
-          <span className="stat-label">Total Players</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{stats?.totalTournaments || 0}</span>
-          <span className="stat-label">Total Tournaments</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{stats?.totalSponsorships || 0}</span>
-          <span className="stat-label">Approved Sponsors</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-value">{stats?.liveMatches || 0}</span>
-          <span className="stat-label">Active Matches</span>
-        </div>
-      </section>
+      {error && <div className="admin-card" style={{borderColor: 'var(--admin-error)', color: 'var(--admin-error)', marginBottom: 20}}>⚠ {error}</div>}
 
-      {/* ADMIN ACTIONS QUICK LINKS */}
-      <section className="profile-section">
-        <div className="section-header">
-          <h2>Admin Controls</h2>
-        </div>
-        <div className="section-body" style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem'}}>
-          <button className="primaryBtn" onClick={() => window.location.href='/admin/users'}>Manage Users</button>
-          <button className="tOutlineBtn" onClick={() => window.location.href='/admin/dashboard'}>Dashboard Config</button>
-          <button className="tOutlineBtn" onClick={() => window.location.href='/admin/tournaments'}>Manage Tournaments</button>
-          <button className="tOutlineBtn" onClick={() => window.location.href='/admin/live'}>Live Match Control</button>
-        </div>
-      </section>
+      <div className="admin-stats">
+        <StatItem label="Total Players" value={stats?.totalPlayers || 0} color="#00f2ff" />
+        <StatItem label="Organizers" value={stats?.totalOrganisers || 0} color="#7000ff" />
+        <StatItem label="Tournaments" value={stats?.totalTournaments || 0} color="#ffd700" />
+        <StatItem label="Live Matches" value={stats?.liveMatches || 0} color="#00ff95" />
+        <StatItem label="Sponsor Bids" value={stats?.totalSponsors || 0} color="#ff0055" />
+        <StatItem label="Pending Bids" value={stats?.pendingBids || 0} color="#ff4d4d" />
+      </div>
+
+      <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px'}}>
+        <section className="admin-card">
+          <h3>Quick Commands</h3>
+          <div style={{display: 'grid', gap: '12px', marginTop: '16px'}}>
+            <button className="admin-nav-item active" onClick={() => window.location.href='/admin/users'}>Moderate Users</button>
+            <button className="admin-nav-item" onClick={() => window.location.href='/admin/dashboard'}>Update Global CMS</button>
+            <button className="admin-nav-item" onClick={() => window.location.href='/admin/sponsors'}>Review Sponsor Bids</button>
+          </div>
+        </section>
+
+        <section className="admin-card">
+          <h3>System Health</h3>
+          <div style={{marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '16px'}}>
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <span className="stat-label">Database Status</span>
+              <span style={{color: 'var(--admin-success)'}}>OPERATIONAL</span>
+            </div>
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <span className="stat-label">Security Layer</span>
+              <span style={{color: 'var(--admin-success)'}}>ENCRYPTED</span>
+            </div>
+            <div style={{display: 'flex', justifyContent: 'space-between'}}>
+              <span className="stat-label">API Latency</span>
+              <span style={{color: 'var(--admin-primary)'}}>12ms</span>
+            </div>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

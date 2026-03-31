@@ -138,7 +138,7 @@ router.get("/:id", async (req, res) => {
     }).lean();
 
     if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found" });
-
+    
     // ✅ 2. Fetch related data
     const TournamentUpdate = require("../models/TournamentUpdate");
     const TournamentPlayer = require("../models/TournamentPlayer");
@@ -148,7 +148,7 @@ router.get("/:id", async (req, res) => {
     const field = await TournamentPlayer.find({ tournamentId: id, status: "approved" })
       .populate("playerId", "playerName club handicap")
       .lean();
-
+    
     // Map field to match frontend expectation
     const fieldMapped = field.map(f => ({
       id: f._id,
@@ -157,8 +157,8 @@ router.get("/:id", async (req, res) => {
       handicap: f.handicapAtJoin ?? f.playerId?.handicap ?? "—"
     }));
 
-    return res.json({
-      ok: true,
+    return res.json({ 
+      ok: true, 
       tournament,
       updates,
       field: fieldMapped
@@ -206,22 +206,22 @@ router.post("/", requireSession, async (req, res) => {
     // ✅ 4. Check Overlapping Tournaments for same organiser at SAME COURSE
     const overlap = await Tournament.find({
       organiserId: oId,
-      course: tournamentVenue,
+      course: tournamentVenue, 
       $or: [
         { startDate: { $lte: end }, endDate: { $gte: start } }
       ]
     }).lean();
     if (overlap && overlap.length > 0) {
-      return res.status(400).json({
-        ok: false,
-        message: `Oops! Same dates already have tournament on this course: ${overlap[0].title}`
+      return res.status(400).json({ 
+        ok: false, 
+        message: `Oops! Same dates already have tournament on this course: ${overlap[0].title}` 
       });
     }
 
     const extras = Array.isArray(body?.registration?.extras)
       ? body.registration.extras
-        .filter((x) => x && String(x.name || "").trim() && x.price !== undefined && x.price !== null)
-        .map((x) => ({ name: String(x.name).trim(), price: Number(x.price) }))
+          .filter((x) => x && String(x.name || "").trim() && x.price !== undefined && x.price !== null)
+          .map((x) => ({ name: String(x.name).trim(), price: Number(x.price) }))
       : [];
 
     const tournament = await Tournament.create({
@@ -330,7 +330,7 @@ router.post("/players/me/:id/register", requireSession, requirePlayer, async (re
     // ✅ Validation: partner count must not exceed teamSize - 1
     // Relaxed check: Allow more invites than seats to support "first-come-first-served"
     // However, we still want to keep it reasonable, e.g., max 10 invites per team
-    if (partnerIds.length > 10) {
+    if (partnerIds.length > 10) { 
       return res.status(400).json({ ok: false, message: "You can invite a maximum of 10 friends at once." });
     }
 
@@ -338,7 +338,7 @@ router.post("/players/me/:id/register", requireSession, requirePlayer, async (re
     if (teamSize > 1 && !teamName) {
       return res.status(400).json({ ok: false, message: "Team name is required for team formats." });
     }
-
+    
     // Validate partners (must be players and must be friends)
     if (partnerIds.length > 0) {
       const Friendship = require("../models/Friendship");
@@ -372,34 +372,34 @@ router.post("/players/me/:id/register", requireSession, requirePlayer, async (re
 
     if (maxPlayers > 0) {
       // Use teamSize if registration is for a team, otherwise 1
+    const playersToCount = teamSize > 1 ? teamSize : 1;
+
+    if (maxPlayers > 0) {
+      // 1. Get all unique registration groups that have at least one 'active' member
+      const activeGroups = await TournamentPlayer.distinct("registrationGroupId", {
+        tournamentId: toObjId(id),
+        status: { $in: ["approved", "pending", "awaiting_friends"] }
+      });
+
+      // 2. Count solo players (those without a registrationGroupId)
+      const soloCount = await TournamentPlayer.countDocuments({
+        tournamentId: toObjId(id),
+        registrationGroupId: { $in: ["", null] },
+        status: { $in: ["approved", "pending", "awaiting_friends"] }
+      });
+
+      // 3. Calculate total spots taken
+      // Note: We filter out any empty string from distinct results
+      const teamGroups = activeGroups.filter(g => g && g !== "");
+      const totalOccupied = (teamGroups.length * teamSize) + soloCount;
+
       const playersToCount = teamSize > 1 ? teamSize : 1;
 
-      if (maxPlayers > 0) {
-        // 1. Get all unique registration groups that have at least one 'active' member
-        const activeGroups = await TournamentPlayer.distinct("registrationGroupId", {
-          tournamentId: toObjId(id),
-          status: { $in: ["approved", "pending", "awaiting_friends"] }
-        });
-
-        // 2. Count solo players (those without a registrationGroupId)
-        const soloCount = await TournamentPlayer.countDocuments({
-          tournamentId: toObjId(id),
-          registrationGroupId: { $in: ["", null] },
-          status: { $in: ["approved", "pending", "awaiting_friends"] }
-        });
-
-        // 3. Calculate total spots taken
-        // Note: We filter out any empty string from distinct results
-        const teamGroups = activeGroups.filter(g => g && g !== "");
-        const totalOccupied = (teamGroups.length * teamSize) + soloCount;
-
-        const playersToCount = teamSize > 1 ? teamSize : 1;
-
-        if (totalOccupied + playersToCount > maxPlayers) {
-          if (!waitlistEnabled) return res.status(400).json({ ok: false, message: "Tournament is full" });
-          status = "waitlist";
-        }
+      if (totalOccupied + playersToCount > maxPlayers) {
+        if (!waitlistEnabled) return res.status(400).json({ ok: false, message: "Tournament is full" });
+        status = "waitlist";
       }
+    }
     }
 
     // ✅ FRIEND APPROVAL LOGIC
@@ -419,7 +419,7 @@ router.post("/players/me/:id/register", requireSession, requirePlayer, async (re
     for (const pId of allPlayerIds) {
       const isLeader = String(pId) === String(playerId);
       const otherPartnerIds = allPlayerIds.filter(id => String(id) !== String(pId));
-
+      
       const currentStatus = isLeader ? initialLeaderStatus : initialPartnerStatus;
 
       const update = {
@@ -531,15 +531,15 @@ router.post("/players/me/:tid/invite-respond", requireSession, requirePlayer, as
     await reg.save();
 
     const newCount = currentTeamMatched.length + 1;
-
+    
     // If team is now full, handle automatic withdrawals
     if (newCount === teamSize) {
       // 1. Withdraw all other PENDING invites for this team
       await TournamentPlayer.updateMany(
-        {
-          tournamentId: toObjId(tid),
-          registrationGroupId: gid,
-          status: "invitation_pending"
+        { 
+          tournamentId: toObjId(tid), 
+          registrationGroupId: gid, 
+          status: "invitation_pending" 
         },
         { $set: { status: "withdrawn" } }
       );
@@ -547,10 +547,10 @@ router.post("/players/me/:tid/invite-respond", requireSession, requirePlayer, as
       // 2. Promote all 'awaiting_friends' to 'pending' (ready for organiser approval)
       // Note: If some were already 'approved' (leader), keep them as is.
       await TournamentPlayer.updateMany(
-        {
-          tournamentId: toObjId(tid),
-          registrationGroupId: gid,
-          status: "awaiting_friends"
+        { 
+          tournamentId: toObjId(tid), 
+          registrationGroupId: gid, 
+          status: "awaiting_friends" 
         },
         { $set: { status: "pending" } }
       );
@@ -590,14 +590,14 @@ router.get("/players/me", requireSession, requirePlayer, async (req, res) => {
 
     const items = await Promise.all(regs.map(async (r) => {
       if (!r.registrationGroupId) return { ...r, team: [r] };
-
-      const team = await TournamentPlayer.find({
+      
+      const team = await TournamentPlayer.find({ 
         tournamentId: r.tournamentId?._id || r.tournamentId,
-        registrationGroupId: r.registrationGroupId
+        registrationGroupId: r.registrationGroupId 
       })
-        .populate("playerId", "playerName email handicap status")
-        .sort({ createdAt: 1 })
-        .lean();
+      .populate("playerId", "playerName email handicap status")
+      .sort({ createdAt: 1 })
+      .lean();
 
       return { ...r, team };
     }));
@@ -631,7 +631,7 @@ router.post("/players/me/:tid/replace", requireSession, requirePlayer, async (re
 
     const teamMembers = await TournamentPlayer.find({ tournamentId: toObjId(tid), registrationGroupId: gid }).sort({ createdAt: 1 });
     if (String(teamMembers[0].playerId) !== String(myId)) {
-      return res.status(403).json({ ok: false, message: "Only the team leader can replace teammates" });
+       return res.status(403).json({ ok: false, message: "Only the team leader can replace teammates" });
     }
 
     // 2. Identify if there is a vacant slot (blocked player)
@@ -670,7 +670,7 @@ router.post("/players/me/:tid/replace", requireSession, requirePlayer, async (re
     // If there was a blocked member, we "reuse" their spot (delete old, or update?)
     // Actually, user said "remove krke new teamate add krne ka option dedo".
     // I'll create a NEW record for the new teammate and ensure everyone's partnerIds are updated.
-
+    
     const newReg = new TournamentPlayer({
       tournamentId: toObjId(tid),
       playerId: toObjId(newPlayerId),
@@ -796,11 +796,11 @@ router.get("/me/:id/registrations", requireSession, requireOrganiser, async (req
 
       const gid = item.registrationGroupId || `solo-${item._id}`;
       if (!grouped[gid]) {
-        grouped[gid] = {
-          groupId: gid,
-          teamName: item.teamName || "Solo / Unnamed Team",
-          status: item.status,
-          members: []
+        grouped[gid] = { 
+          groupId: gid, 
+          teamName: item.teamName || "Solo / Unnamed Team", 
+          status: item.status, 
+          members: [] 
         };
         // Leader is the first NON-BLOCKED member in the group
         if (item.status !== "blocked") {
@@ -817,11 +817,11 @@ router.get("/me/:id/registrations", requireSession, requireOrganiser, async (req
       return item;
     });
 
-    return res.json({
-      ok: true,
-      tournament,
-      items,
-      grouped: Object.values(grouped)
+    return res.json({ 
+      ok: true, 
+      tournament, 
+      items, 
+      grouped: Object.values(grouped) 
     });
   } catch (err) {
     console.error("GET ORGANISER REGISTRATIONS ERROR:", err);
@@ -853,8 +853,8 @@ router.patch("/me/:tid/registrations/:rid/status", requireSession, requireOrgani
       if (!target) return res.status(404).json({ ok: false, message: "Registration not found" });
 
       const groupId = target.registrationGroupId;
-      const query = groupId
-        ? { tournamentId: toObjId(tid), registrationGroupId: groupId }
+      const query = groupId 
+        ? { tournamentId: toObjId(tid), registrationGroupId: groupId } 
         : { _id: toObjId(rid), tournamentId: toObjId(tid) };
 
       await TournamentPlayer.deleteMany(query);
@@ -874,8 +874,8 @@ router.patch("/me/:tid/registrations/:rid/status", requireSession, requireOrgani
       return res.json({ ok: true, message: "Player blocked and team updated", registrationId: rid });
     }
 
-    const queryGroup = groupId
-      ? { tournamentId: toObjId(tid), registrationGroupId: groupId }
+    const queryGroup = groupId 
+      ? { tournamentId: toObjId(tid), registrationGroupId: groupId } 
       : { _id: toObjId(rid), tournamentId: toObjId(tid) };
 
     const result = await TournamentPlayer.updateMany(queryGroup, { $set: { status: next } });
@@ -929,8 +929,8 @@ router.patch("/me/:tid/registrations/:rid/paid", requireSession, requireOrganise
     if (!target) return res.status(404).json({ ok: false, message: "Registration not found" });
 
     const groupId = target.registrationGroupId;
-    const query = groupId
-      ? { tournamentId: toObjId(tid), registrationGroupId: groupId }
+    const query = groupId 
+      ? { tournamentId: toObjId(tid), registrationGroupId: groupId } 
       : { _id: toObjId(rid), tournamentId: toObjId(tid) };
 
     await TournamentPlayer.updateMany(query, { $set: { paid, paymentRef } });
@@ -962,8 +962,8 @@ router.delete("/me/:tid/registrations/:rid", requireSession, requireOrganiser, a
     if (!target) return res.status(404).json({ ok: false, message: "Registration not found" });
 
     const groupId = target.registrationGroupId;
-    const query = groupId
-      ? { tournamentId: toObjId(tid), registrationGroupId: groupId }
+    const query = groupId 
+      ? { tournamentId: toObjId(tid), registrationGroupId: groupId } 
       : { _id: toObjId(rid), tournamentId: toObjId(tid) };
 
     const deleted = await TournamentPlayer.deleteMany(query);
@@ -1016,7 +1016,7 @@ router.post("/me/:tid/registrations/manual", requireSession, requireOrganiser, a
 
     // 1. Process Main Player
     const mainPlayer = await getPlayer(name, phone, email, handicap);
-
+    
     // 2. Process Partners
     const partnerIds = [];
     const incomingPartners = Array.isArray(partners) ? partners : [];
@@ -1219,7 +1219,7 @@ router.patch("/me/:id", requireSession, requireOrganiser, async (req, res) => {
     // ✅ Validate Dates in Update
     const start = body.startDate ? new Date(body.startDate) : new Date(tournament.startDate);
     const end = body.endDate ? new Date(body.endDate) : new Date(tournament.endDate);
-
+    
     if (isNaN(start) || isNaN(end)) {
       return res.status(400).json({ ok: false, message: "Invalid startDate or endDate" });
     }
@@ -1229,16 +1229,16 @@ router.patch("/me/:id", requireSession, requireOrganiser, async (req, res) => {
 
     // ✅ Duplicate Title Check (excluding this tournament)
     if (body.title && String(body.title).trim().toLowerCase() !== String(tournament.title).toLowerCase()) {
-      const dup = await Tournament.findOne({
-        _id: { $ne: toObjId(id) },
-        organiserId: oId,
-        title: { $regex: new RegExp(`^${body.title.trim()}$`, "i") }
+      const dup = await Tournament.findOne({ 
+        _id: { $ne: toObjId(id) }, 
+        organiserId: oId, 
+        title: { $regex: new RegExp(`^${body.title.trim()}$`, "i") } 
       }).lean();
       if (dup) return res.status(400).json({ ok: false, message: "A tournament with this name already exists." });
     }
 
     const checkCourse = body.course ? String(body.course).trim() : tournament.course;
-
+    
     // ✅ Check Overlapping Tournaments (excluding this tournament)
     const overlap = await Tournament.findOne({
       _id: { $ne: toObjId(id) },
@@ -1253,7 +1253,7 @@ router.patch("/me/:id", requireSession, requireOrganiser, async (req, res) => {
     }
 
     const updatableFields = ["title", "description", "status", "visibility", "bannerUrl", "course", "city", "startDate", "endDate", "teeOffWindow", "format", "rounds"];
-
+    
     for (const field of updatableFields) {
       if (body[field] !== undefined) {
         tournament[field] = body[field];
@@ -1358,12 +1358,12 @@ router.post("/me/:id/updates", requireSession, requireOrganiser, async (req, res
     if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found" });
 
     const { type, title, message, pinned } = req.body;
-
+    
     // Using TournamentUpdate model, mapping 'type' to a generic field or appending to title.
     // Wait, TournamentUpdate schema only has title, message, pinned, visibility, authorId.
     const update = await TournamentUpdate.create({
       tournamentId: toObjId(id),
-      title: `${type || 'Announcement'} ${title ? '- ' + title : ''}`.trim(),
+      title: `${type || 'Announcement'} ${title ? '- '+title : ''}`.trim(),
       message,
       pinned: !!pinned,
       authorId: organiserId
@@ -1407,7 +1407,7 @@ router.post("/me/:id/logs", requireSession, requireOrganiser, async (req, res) =
     if (!tournament) return res.status(404).json({ ok: false, message: "Tournament not found" });
 
     const { action, meta } = req.body;
-
+    
     const log = await TournamentLog.create({
       tournamentId: toObjId(id),
       action,

@@ -28,18 +28,22 @@ import OrganiserCheckIn from "../../organizer/component/OrganiserCheckIn";
 import OrganiserProfile from "../../organizer/component/OrganiserProfile";
 
 import SponsorProfile from "../../sponser/component/SponsorProfile";
+import AdminLayout from "../../admin/component/AdminLayout";
+import AdminSponsorControl from "../../admin/component/AdminSponsorControl";
+import AdminPageEditor from "../../admin/component/AdminPageEditor";
 import AdminProfile from "../../admin/component/AdminProfile";
-
 import Blocked from "./Blocked";
 
 function App() {
   const location = useLocation();
 
   // ✅ hide navbar + top ad on these pages
+  const isAdmin = location.pathname.startsWith("/admin");
   const hideChrome =
     location.pathname.startsWith("/player/entry-pass") ||
     location.pathname.startsWith("/organiser/checkin") ||
-    location.pathname === "/blocked";
+    location.pathname === "/blocked" ||
+    isAdmin;
 
   return (
     <div className="App">
@@ -65,12 +69,16 @@ function App() {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/blocked" element={<Blocked />} />
 
-        <Route path="/admin/dashboard" element={<DashboardManage />} />
-        <Route path="/admin/live" element={<LiveManage />} />
-        <Route path="/admin/tournaments" element={<TournamentManage />} />
-        <Route path="/admin/profile" element={<AdminProfile />} />
-        <Route path="/admin/users" element={<AdminUserList />} />
-        <Route path="/admin/news" element={<AdminNewsManage />} />
+        {/* ADMIN ROUTES wrapped in AdminLayout */}
+        <Route path="/admin" element={<AdminLayout><AdminProfile /></AdminLayout>} />
+        <Route path="/admin/dashboard" element={<AdminLayout><DashboardManage /></AdminLayout>} />
+        <Route path="/admin/live" element={<AdminLayout><LiveManage /></AdminLayout>} />
+        <Route path="/admin/tournaments" element={<AdminLayout><TournamentManage /></AdminLayout>} />
+        <Route path="/admin/profile" element={<AdminLayout><AdminProfile /></AdminLayout>} />
+        <Route path="/admin/users" element={<AdminLayout><AdminUserList /></AdminLayout>} />
+        <Route path="/admin/news" element={<AdminLayout><AdminNewsManage /></AdminLayout>} />
+        <Route path="/admin/pages" element={<AdminLayout><AdminPageEditor /></AdminLayout>} />
+        <Route path="/admin/sponsors" element={<AdminLayout><AdminSponsorControl /></AdminLayout>} />
 
         <Route path="/organiser/tournaments" element={<OrganiserManageTournaments />} />
 
@@ -85,7 +93,6 @@ function App() {
         <Route path="/organiser/profile" element={<OrganiserProfile />} />
 
         <Route path="/sponsor/profile" element={<SponsorProfile />} />
-        <Route path="/admin/profile" element={<AdminProfile />} />
       </Routes>
 
       {!hideChrome && <Footer />}

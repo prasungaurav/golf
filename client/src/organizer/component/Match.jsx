@@ -103,7 +103,7 @@ export default function Match({
     return () => clearInterval(timer);
   }, [matches]);
 
-  const loadList = async () => {
+  const loadList = React.useCallback(async () => {
     if (!tournament?._id || mode === "pip") return;
     try {
       const data = await api(`/api/matches/tournament/${tournament._id}`);
@@ -125,15 +125,15 @@ export default function Match({
     } catch (e) {
       console.error("Poll failed", e);
     }
-  };
+  }, [tournament?._id, mode]);
 
   // ✅ Auto Polling (Matches list) - 5 seconds
   useEffect(() => {
     const p = setInterval(loadList, 5000);
     return () => clearInterval(p);
-  }, [tournament?._id]);
+  }, [loadList]);
 
-  const fetchApproved = async () => {
+  const fetchApproved = React.useCallback(async () => {
     if (!tournament?._id) return;
     try {
       const data = await api(`/api/tournaments/me/${tournament._id}/registrations?status=approved`);
@@ -141,11 +141,11 @@ export default function Match({
     } catch (e) {
       console.error("Failed to fetch approved players", e);
     }
-  };
+  }, [tournament?._id]);
 
   useEffect(() => {
     if (mode !== "pip") fetchApproved();
-  }, [tournament?._id]);
+  }, [fetchApproved, mode]);
 
   const onAddPlayer = async (pId) => {
     if (!selectedMatchId || !showAddPlayerModal.team) return;
@@ -164,6 +164,45 @@ export default function Match({
     }
   };
 
+  // ------------------------------------------------------------
+  // ✅ Save (backend PATCH)
+  // ------------------------------------------------------------
+  const onSave = React.useCallback(async () => {
+    if (!selectedMatch?._id) return;
+
+    setSaving(true);
+    try {
+      const payload = {
+        scoreA: edit.home === "" ? null : Number(edit.home),
+        scoreB: edit.away === "" ? null : Number(edit.away),
+        hole: edit.hole === "" ? 0 : Number(edit.hole),
+        status: edit.status ? uiToDbStatus(edit.status) : undefined,
+        holeScores: edit.holeScores.filter(h => h.scoreA !== "" || h.scoreB !== "").map(h => ({
+          hole: h.hole,
+          scoreA: h.scoreA === "" ? null : Number(h.scoreA),
+          scoreB: h.scoreB === "" ? null : Number(h.scoreB)
+        }))
+      };
+
+      const data = await api(`/api/matches/${selectedMatch._id}`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+
+      // Optimistic update already handled by UI bindings, but we sync with server data here
+      const updated = data?.match || null;
+      if (updated) {
+        const fixed = { ...updated, status: dbToUiStatus(updated.status) };
+        setMatches((prev) => prev.map((m) => (String(m._id) === String(fixed._id) ? fixed : m)));
+      }
+    } catch (e) {
+      console.error(e);
+      alert(e.message || "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  }, [selectedMatch, edit]);
+
   // ✅ Debounced Auto-Save
   useEffect(() => {
     if (!selectedMatchId || saving) return;
@@ -179,10 +218,9 @@ export default function Match({
 
     if (!hasChanged) return;
 
-    console.log("Auto-saving match...");
     const timeout = setTimeout(onSave, 1500);
     return () => clearTimeout(timeout);
-  }, [edit, selectedMatchId]); // Only trigger on edit changes
+  }, [edit, selectedMatchId, matches, onSave, saving]); // Only trigger on edit changes
 
   // ------------------------------------------------------------
   // ✅ Load matches
@@ -190,7 +228,8 @@ export default function Match({
   // PiP mode: use initialMatches (fast), fallback dummy
   // ------------------------------------------------------------
   useEffect(() => {
-    abortRef.current.alive = true;
+    const currentAbortRef = abortRef.current;
+    currentAbortRef.alive = true;
 
     const load = async () => {
       setLoading(true);
@@ -248,7 +287,7 @@ export default function Match({
     load();
 
     return () => {
-      abortRef.current.alive = false;
+      currentAbortRef.alive = false;
     };
   }, [mode, tournament?._id, initialMatches]);
 
@@ -278,7 +317,7 @@ export default function Match({
       status: selectedMatch.status ?? "",
       holeScores: hs
     });
-  }, [selectedMatchId]);
+  }, [selectedMatch, selectedMatchId]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -308,75 +347,6 @@ export default function Match({
       home: totalA || "",
       away: totalB || ""
     }));
-  };
-
-  // ------------------------------------------------------------
-  // ✅ Save (backend PATCH)
-  // ------------------------------------------------------------
-  const onSave = async () => {
-    if (!selectedMatch?._id) return;
-
-    setSaving(true);
-    try {
-      const payload = {
-        scoreA: edit.home === "" ? null : Number(edit.home),
-        scoreB: edit.away === "" ? null : Number(edit.away),
-        hole: edit.hole === "" ? 0 : Number(edit.hole),
-        status: edit.status ? uiToDbStatus(edit.status) : undefined,
-        holeScores: edit.holeScores.filter(h => h.scoreA !== "" || h.scoreB !== "").map(h => ({
-          hole: h.hole,
-          scoreA: h.scoreA === "" ? null : Number(h.scoreA),
-          scoreB: h.scoreB === "" ? null : Number(h.scoreB)
-        }))
-      };
-
-      const data = await api(`/api/matches/${selectedMatch._id}`, {
-        method: "PATCH",
-        body: JSON.stringify(payload),
-      });
-
-      // Optimistic update already handled by UI bindings, but we sync with server data here
-      const updated = data?.match || null;
-      if (updated) {
-        const fixed = { ...updated, status: dbToUiStatus(updated.status) };
-        setMatches((prev) => prev.map((m) => (String(m._id) === String(fixed._id) ? fixed : m)));
-      }
-    } catch (e) {
-      console.error(e);
-      alert(e.message || "Save failed");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // ------------------------------------------------------------
-  // ✅ Refresh (backend re-fetch)
-  // ------------------------------------------------------------
-  const onRefresh = async () => {
-    setLoading(true);
-
-    try {
-      if (tournament?._id && mode !== "pip") {
-        const data = await api(`/api/matches/tournament/${tournament._id}`);
-        const list = Array.isArray(data?.matches) ? data.matches : [];
-        const normalized = list.map((m) => ({ ...m, status: dbToUiStatus(m.status) }));
-
-        setMatches(normalized);
-        setSelectedMatchId((prev) => prev || normalized?.[0]?._id || null);
-        setLoading(false);
-        return;
-      }
-
-      // PiP / fallback (no backend)
-      const list = initialMatches?.length ? initialMatches : matches.length ? matches : DUMMY_MATCHES;
-      setMatches(list);
-      setSelectedMatchId((prev) => prev || list?.[0]?._id || null);
-    } catch (e) {
-      console.error(e);
-      alert(e.message || "Refresh failed");
-    } finally {
-      setLoading(false);
-    }
   };
 
   // ------------------------------------------------------------
@@ -431,7 +401,6 @@ export default function Match({
 
   const renderMatchItem = (m) => {
     const active = String(m._id) === String(selectedMatchId);
-    const live = isMatchLive(m);
 
     const sideA = m.teamAName || (m.teamA?.map(p => p.name).join(", ")) || "Side A";
     const sideB = m.teamBName || (m.teamB?.map(p => p.name).join(", ")) || "Side B";

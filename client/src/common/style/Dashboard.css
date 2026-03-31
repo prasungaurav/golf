@@ -370,16 +370,27 @@
   text-transform: uppercase;
 }
 
-.matchGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+.match-carousel-container {
+  overflow: hidden;
+  width: 100%;
+}
+
+.match-track {
+  display: flex;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   gap: 16px;
+}
+
+.matchGrid {
+  /* No longer a grid, but the parent container */
+  position: relative;
 }
 
 .matchCard {
   padding: 16px;
   border-radius: var(--radius-lg);
   background: var(--surface_container_high);
+  min-width: calc(50% - 8px); /* 2 per view */
 }
 
 .matchTop {
@@ -419,6 +430,32 @@
   margin-bottom: 10px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+/* Pagination for Live Matches */
+.live-pagination {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.pagi-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--outline_variant);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.pagi-dot.active {
+  background: var(--primary);
+  box-shadow: 0 0 12px var(--primary);
+  width: 24px;
+  border-radius: 4px;
 }
 
 /* Upcoming list */
